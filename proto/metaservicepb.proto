@@ -1,0 +1,13 @@
+syntax = "proto3";
+
+package tistreampb;
+
+import "metapb.proto";
+
+option go_package = "./";
+
+service MetaService {
+    rpc UpdateNotify(tistreampb.UpdateNotificationReq) returns (tistreampb.UpdateNotificationResp);
+    rpc DispatcherHeartbeat(tistreampb.DispatcherHeartbeatReq) returns (tistreampb.DispatcherHeartbeatResp);
+    rpc SorterHeartbeat(tistreampb.SorterHeartbeatReq) returns (tistreampb.SorterHeartbeatResp);
+}

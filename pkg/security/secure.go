@@ -8,9 +8,9 @@ import (
 )
 
 type Secure struct {
-	certFile  string
-	keyFile   string
-	caFile    string
+	certFile string
+	keyFile  string
+	caFile   string
 
 	tlsConfig *tls.Config
 }

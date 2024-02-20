@@ -22,8 +22,8 @@ type GrpcServer struct {
 // NewGrpcServer creates a new TcpServer.
 func NewGrpcServer(addr string, port int) *GrpcServer {
 	return &GrpcServer{
-		addr: addr,
-		port: port,
+		addr:           addr,
+		port:           port,
 		internalServer: grpc.NewServer(),
 	}
 }

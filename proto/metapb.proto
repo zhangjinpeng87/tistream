@@ -1,0 +1,59 @@
+syntax = "proto3";
+package tistreampb;
+
+option go_package = "./";
+
+// Upstream notify downstream there are new data change files for specified tenants.
+message UpdateNotificationReq {
+    repeated uint32 tenant_id = 1;
+}
+
+message UpdateNotificationResp {
+}
+
+message DispatcherHeartbeatReq {
+    uint32 node_id = 1; // dispatcher node id.
+    uint64 throughput = 2; // throughput since last heartbeat.
+}
+
+message DispatcherHeartbeatResp {
+}
+
+message SorterHeartbeatReq {
+    uint32 node_id = 1; // sorter node id.
+    uint64 throughput = 2; // throughput since last heartbeat.
+    repeated TaskStats task_stats = 3;
+}
+
+message SorterHeartbeatResp {
+}
+
+message TenantStats {
+    uint32 id = 1; // tenant id.
+    repeated TaskStats task_stats = 2;
+}
+
+message Task {
+    uint32 tenant_id = 1;
+    bytes range_start = 2;
+    bytes range_end = 3;
+}
+
+message TaskStats {
+    Task task = 1;
+    uint64 throughput = 2; // throughput since last heartbeat.
+}
+
+message TenantTasksReq {
+    uint32 tenant_id = 1;
+    repeated Task tasks = 2;
+    TaskOp op = 3;
+}
+
+message TenantTasksResp {
+}
+
+enum TaskOp {
+    Attach = 0;
+    Detach = 1;
+}

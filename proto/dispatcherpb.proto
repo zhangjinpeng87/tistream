@@ -1,0 +1,11 @@
+syntax = "proto3";
+package tistreampb;
+
+import "metapb.proto";
+
+option go_package = "./";
+
+service DispatcherService {
+    rpc NotifyTenantNewChanges (tistreampb.UpdateNotificationReq) returns (tistreampb.UpdateNotificationResp);
+    rpc HandleTenantTask (tistreampb.TenantTasksReq) returns (tistreampb.TenantTasksResp);
+}

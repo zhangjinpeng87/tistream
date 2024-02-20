@@ -2,7 +2,7 @@
 // versions:
 // - protoc-gen-go-grpc v1.2.0
 // - protoc             v3.8.0
-// source: dispatcher.proto
+// source: dispatcherpb.proto
 
 package __
 
@@ -22,8 +22,8 @@ const _ = grpc.SupportPackageIsVersion7
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type DispatcherServiceClient interface {
-	NotifyTenantNewChanges(ctx context.Context, in *NewChangesRequest, opts ...grpc.CallOption) (*NewChangesResponse, error)
-	HandleTenantTask(ctx context.Context, in *TenantTaskRequest, opts ...grpc.CallOption) (*TenantTaskResponse, error)
+	NotifyTenantNewChanges(ctx context.Context, in *UpdateNotificationReq, opts ...grpc.CallOption) (*UpdateNotificationResp, error)
+	HandleTenantTask(ctx context.Context, in *TenantTasksReq, opts ...grpc.CallOption) (*TenantTasksResp, error)
 }
 
 type dispatcherServiceClient struct {
@@ -34,18 +34,18 @@ func NewDispatcherServiceClient(cc grpc.ClientConnInterface) DispatcherServiceCl
 	return &dispatcherServiceClient{cc}
 }
 
-func (c *dispatcherServiceClient) NotifyTenantNewChanges(ctx context.Context, in *NewChangesRequest, opts ...grpc.CallOption) (*NewChangesResponse, error) {
-	out := new(NewChangesResponse)
-	err := c.cc.Invoke(ctx, "/tistream.DispatcherService/NotifyTenantNewChanges", in, out, opts...)
+func (c *dispatcherServiceClient) NotifyTenantNewChanges(ctx context.Context, in *UpdateNotificationReq, opts ...grpc.CallOption) (*UpdateNotificationResp, error) {
+	out := new(UpdateNotificationResp)
+	err := c.cc.Invoke(ctx, "/tistreampb.DispatcherService/NotifyTenantNewChanges", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *dispatcherServiceClient) HandleTenantTask(ctx context.Context, in *TenantTaskRequest, opts ...grpc.CallOption) (*TenantTaskResponse, error) {
-	out := new(TenantTaskResponse)
-	err := c.cc.Invoke(ctx, "/tistream.DispatcherService/HandleTenantTask", in, out, opts...)
+func (c *dispatcherServiceClient) HandleTenantTask(ctx context.Context, in *TenantTasksReq, opts ...grpc.CallOption) (*TenantTasksResp, error) {
+	out := new(TenantTasksResp)
+	err := c.cc.Invoke(ctx, "/tistreampb.DispatcherService/HandleTenantTask", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -56,8 +56,8 @@ func (c *dispatcherServiceClient) HandleTenantTask(ctx context.Context, in *Tena
 // All implementations must embed UnimplementedDispatcherServiceServer
 // for forward compatibility
 type DispatcherServiceServer interface {
-	NotifyTenantNewChanges(context.Context, *NewChangesRequest) (*NewChangesResponse, error)
-	HandleTenantTask(context.Context, *TenantTaskRequest) (*TenantTaskResponse, error)
+	NotifyTenantNewChanges(context.Context, *UpdateNotificationReq) (*UpdateNotificationResp, error)
+	HandleTenantTask(context.Context, *TenantTasksReq) (*TenantTasksResp, error)
 	mustEmbedUnimplementedDispatcherServiceServer()
 }
 
@@ -65,10 +65,10 @@ type DispatcherServiceServer interface {
 type UnimplementedDispatcherServiceServer struct {
 }
 
-func (UnimplementedDispatcherServiceServer) NotifyTenantNewChanges(context.Context, *NewChangesRequest) (*NewChangesResponse, error) {
+func (UnimplementedDispatcherServiceServer) NotifyTenantNewChanges(context.Context, *UpdateNotificationReq) (*UpdateNotificationResp, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method NotifyTenantNewChanges not implemented")
 }
-func (UnimplementedDispatcherServiceServer) HandleTenantTask(context.Context, *TenantTaskRequest) (*TenantTaskResponse, error) {
+func (UnimplementedDispatcherServiceServer) HandleTenantTask(context.Context, *TenantTasksReq) (*TenantTasksResp, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method HandleTenantTask not implemented")
 }
 func (UnimplementedDispatcherServiceServer) mustEmbedUnimplementedDispatcherServiceServer() {}
@@ -85,7 +85,7 @@ func RegisterDispatcherServiceServer(s grpc.ServiceRegistrar, srv DispatcherServ
 }
 
 func _DispatcherService_NotifyTenantNewChanges_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(NewChangesRequest)
+	in := new(UpdateNotificationReq)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -94,16 +94,16 @@ func _DispatcherService_NotifyTenantNewChanges_Handler(srv interface{}, ctx cont
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/tistream.DispatcherService/NotifyTenantNewChanges",
+		FullMethod: "/tistreampb.DispatcherService/NotifyTenantNewChanges",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(DispatcherServiceServer).NotifyTenantNewChanges(ctx, req.(*NewChangesRequest))
+		return srv.(DispatcherServiceServer).NotifyTenantNewChanges(ctx, req.(*UpdateNotificationReq))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
 func _DispatcherService_HandleTenantTask_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(TenantTaskRequest)
+	in := new(TenantTasksReq)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -112,10 +112,10 @@ func _DispatcherService_HandleTenantTask_Handler(srv interface{}, ctx context.Co
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/tistream.DispatcherService/HandleTenantTask",
+		FullMethod: "/tistreampb.DispatcherService/HandleTenantTask",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(DispatcherServiceServer).HandleTenantTask(ctx, req.(*TenantTaskRequest))
+		return srv.(DispatcherServiceServer).HandleTenantTask(ctx, req.(*TenantTasksReq))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -124,7 +124,7 @@ func _DispatcherService_HandleTenantTask_Handler(srv interface{}, ctx context.Co
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
 var DispatcherService_ServiceDesc = grpc.ServiceDesc{
-	ServiceName: "tistream.DispatcherService",
+	ServiceName: "tistreampb.DispatcherService",
 	HandlerType: (*DispatcherServiceServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
@@ -137,5 +137,5 @@ var DispatcherService_ServiceDesc = grpc.ServiceDesc{
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
-	Metadata: "dispatcher.proto",
+	Metadata: "dispatcherpb.proto",
 }
