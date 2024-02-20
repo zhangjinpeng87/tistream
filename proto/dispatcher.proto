@@ -1,0 +1,32 @@
+syntax = "proto3";
+
+package tistream;
+
+option go_package = "./";
+
+service DispatcherService {
+    rpc NotifyTenantNewChanges (NewChangesRequest) returns (NewChangesResponse);
+    rpc HandleTenantTask (TenantTaskRequest) returns (TenantTaskResponse);
+}
+
+message NewChangesRequest {
+    int32 tenant_id = 1;
+}
+
+message NewChangesResponse {
+}
+
+enum TaskOp {
+    Attach = 0;
+    Detach = 1;
+}
+
+message TenantTaskRequest {
+    int32 tenant_id = 1;
+    bytes range_start = 2;
+    bytes range_end = 3;
+    TaskOp op = 4;
+}
+
+message TenantTaskResponse {
+}
