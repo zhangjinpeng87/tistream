@@ -3,6 +3,7 @@ module github.com/zhangjinpeng87/tistream
 go 1.21.3
 
 require (
+	github.com/BurntSushi/toml v1.3.2 // indirect
 	github.com/aws/aws-sdk-go v1.50.20 // indirect
 	github.com/go-sql-driver/mysql v1.7.1 // indirect
 	github.com/golang/protobuf v1.5.3 // indirect

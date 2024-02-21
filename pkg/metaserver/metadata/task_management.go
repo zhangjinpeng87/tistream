@@ -21,7 +21,7 @@ func NewTaskManagement() *TaskManagement {
 	}
 }
 
-func (t *TaskManagement) AddTask(tenantId uint32, task *pb.Task) {
+func (t *TaskManagement) AddTask(tenantId uint32, task TenantTask) {
 	t.Lock()
 	defer t.Unlock()
 
@@ -50,7 +50,7 @@ func (t *TaskManagement) RemoveTenant(tenantId uint32) {
 	delete(t.tasks, tenantId)
 }
 
-func (t *TaskManagement) GetTask(tenantId uint32, rangeStart RangeStart) *pb.Task {
+func (t *TaskManagement) GetTask(tenantId uint32, rangeStart RangeStart) *TenantTask {
 	t.RLock()
 	defer t.RUnlock()
 
@@ -75,11 +75,11 @@ func NewTenantTasks(tenantId uint32) *TenantTasks {
 	}
 }
 
-func (t *TenantTasks) AddTask(task *pb.Task) {
+func (t *TenantTasks) AddTask(task TenantTask) {
 	t.Lock()
 	defer t.Unlock()
 
-	t.taskBtree.ReplaceOrInsert(TenantTask{RangeStart: task.RangeStart, Task: task})
+	t.taskBtree.ReplaceOrInsert(task)
 }
 
 func (t *TenantTasks) RemoveTask(rangeStart RangeStart) {
@@ -89,12 +89,12 @@ func (t *TenantTasks) RemoveTask(rangeStart RangeStart) {
 	t.taskBtree.Delete(TenantTask{RangeStart: rangeStart})
 }
 
-func (t *TenantTasks) GetTask(rangeStart RangeStart) *pb.Task {
+func (t *TenantTasks) GetTask(rangeStart RangeStart) *TenantTask {
 	t.RLock()
 	defer t.RUnlock()
 
 	if item, ok := t.taskBtree.Get(TenantTask{RangeStart: rangeStart}); ok {
-		return item.Task
+		return &item
 	}
 
 	return nil

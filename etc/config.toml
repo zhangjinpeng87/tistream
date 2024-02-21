@@ -1,0 +1,30 @@
+# log-level = "info"
+
+[external-storage]
+# url = "s3://tistream/bucket1"
+# security-key = ""
+# access-key = ""
+
+[dispatcher]
+# addr = "127.0.0.1"
+# port = 20991
+
+[sorter]
+# addr = "127.0.0.1"
+# port = 20992
+
+[meta-server]
+# addr = "127.0.0.1"
+# port = 20993
+# mysql-host = ""
+# mysql-port = ""
+# mysql-user = ""
+# mysql-password = ""
+
+[api-server]
+# addr = "127.0.0.1"
+# port = 20994
+
+[schema-registry]
+# addr = "127.0.0.1"
+# port = 20995
