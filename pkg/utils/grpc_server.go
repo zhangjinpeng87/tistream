@@ -1,8 +1,10 @@
 package utils
 
 import (
+	"context"
 	"net"
 
+	"golang.org/x/sync/errgroup"
 	"google.golang.org/grpc"
 )
 
@@ -34,7 +36,7 @@ func (s *GrpcServer) RegisterService(sd *grpc.ServiceDesc) {
 }
 
 // Start starts the server.
-func (s *GrpcServer) Start() error {
+func (s *GrpcServer) Start(eg *errgroup.Group, ctx context.Context) error {
 	// Start to listen to the server.
 	lis, err := net.Listen("tcp", s.addr)
 	if err != nil {
@@ -44,7 +46,12 @@ func (s *GrpcServer) Start() error {
 	s.listener = &lis
 
 	// Start the server.
-	go s.internalServer.Serve(*s.listener)
+	eg.Go(func() error {
+		if err := s.internalServer.Serve(*s.listener); err != nil {
+			return err
+		}
+		return nil
+	})
 
 	return nil
 }

@@ -31,4 +31,10 @@ func main() {
 		fmt.Printf("Start meta server failed: %v\n", err)
 		os.Exit(1)
 	}
+
+	// Wait for the server to stop.
+	if err := metaServer.Wait(); err != nil {
+		fmt.Printf("Wait for meta server failed: %v\n", err)
+		os.Exit(1)
+	}
 }

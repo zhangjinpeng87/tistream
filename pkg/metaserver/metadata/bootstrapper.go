@@ -19,20 +19,8 @@ func NewBootstrapper(dbPool *utils.DBPool) *Bootstrapper {
 	}
 }
 
-func (b *Bootstrapper) Bootstrap(taskManagement *TaskManagement) error {
-	if err := b.initSchema(); err != nil {
-		return err
-	}
-
-	if err := b.loadTasks(taskManagement); err != nil {
-		return err
-	}
-
-	return nil
-}
-
 // InitSchema initializes the schema.
-func (b *Bootstrapper) initSchema() error {
+func (b *Bootstrapper) InitSchema() error {
 	// Create database tistream if not exists.
 	_, err := b.dbPool.Exec("CREATE DATABASE IF NOT EXISTS tistream")
 	if err != nil {
@@ -101,37 +89,10 @@ func (b *Bootstrapper) initSchema() error {
 		return fmt.Errorf("failed to create table owner: %v", err)
 	}
 
-	return nil
-}
-
-// LoadTasks load tasks from the db.
-func (b *Bootstrapper) loadTasks(taskManagement *TaskManagement) error {
-	rows, err := b.dbPool.Query("SELECT * FROM tistream.tasks")
+	// Init row 1 in table owner if not exists.
+	_, err = b.dbPool.Exec("INSERT IGNORE INTO tistream.owner (id, owner, lease) VALUES (1, \"dummy\", NOW())")
 	if err != nil {
-		return fmt.Errorf("failed to query tasks: %v", err)
-	}
-	defer rows.Close()
-
-	for rows.Next() {
-		var id, tenantID, dispatcher, sorter uint32
-		var rangeStart, rangeEnd, snapshotAddr string
-		if err := rows.Scan(&id, &tenantID, &rangeStart, &rangeEnd, &dispatcher, &sorter, &snapshotAddr); err != nil {
-			return fmt.Errorf("failed to scan tasks: %v", err)
-		}
-
-		pbTask := &pb.Task{
-			TenantId:   uint32(tenantID),
-			RangeStart: []byte(rangeStart),
-			RangeEnd:   []byte(rangeEnd),
-		}
-
-		task := TenantTask{
-			RangeStart:     []byte(rangeStart),
-			Task:           pbTask,
-			AssignedSorter: sorter,
-		}
-
-		taskManagement.AddTask(tenantID, task)
+		return fmt.Errorf("failed to init row 1 in table owner: %v", err)
 	}
 
 	return nil
