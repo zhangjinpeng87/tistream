@@ -18,7 +18,6 @@ type MetaServer struct {
 
 	// The task management.
 	taskManagement *metadata.TaskManagement
-
 }
 
 func NewMetaServer(globalConfig *utils.GlobalConfig) *MetaServer {
@@ -30,8 +29,8 @@ func NewMetaServer(globalConfig *utils.GlobalConfig) *MetaServer {
 
 func (s *MetaServer) Prepare() error {
 	// Connect to backend DB.
-	dbPool, err := utils.NewDBPool(s.globalConfig.MetaServer.MysqlHost, 
-		s.globalConfig.MetaServer.MysqlPort, 
+	dbPool, err := utils.NewDBPool(s.globalConfig.MetaServer.MysqlHost,
+		s.globalConfig.MetaServer.MysqlPort,
 		s.globalConfig.MetaServer.MysqlUser, s.globalConfig.MetaServer.MysqlPassword, "")
 	if err != nil {
 		return err
@@ -55,4 +54,3 @@ func (s *MetaServer) Prepare() error {
 func (s *MetaServer) Start() error {
 	return s.grpcServer.Start()
 }
-

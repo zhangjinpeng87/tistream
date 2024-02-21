@@ -20,6 +20,10 @@
 # mysql-port = ""
 # mysql-user = ""
 # mysql-password = ""
+## Update meta-server lease interval, in seconds.
+# update-lease-interval = 5
+## Master lease duration, in seconds.
+# lease-duration = 10
 
 [api-server]
 # addr = "127.0.0.1"
