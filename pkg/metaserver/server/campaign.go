@@ -21,23 +21,21 @@ type Campaign struct {
 	ServerID string
 
 	config *utils.MetaServerConfig
-	dbPool *utils.DBPool
 
 	// Current Master
 	currentMaster string
 }
 
-func NewCampaign(dbPool *utils.DBPool, config *utils.MetaServerConfig) *Campaign {
+func NewCampaign(config *utils.MetaServerConfig) *Campaign {
 	serverID := fmt.Sprintf("%s:%d", config.Addr, config.Port)
 
 	return &Campaign{
 		ServerID: serverID,
 		config:   config,
-		dbPool:   dbPool,
 	}
 }
 
-func (c *Campaign) Start(taskManagement *metadata.TaskManagement, isMaster *atomic.Bool, eg *errgroup.Group, ctx context.Context) {
+func (c *Campaign) Start(dataManagement *metadata.DataManagement, isMaster *atomic.Bool, eg *errgroup.Group, ctx context.Context) {
 	// Start the campaign.
 	// If the campaign is successful, set the role to master.
 	// If the campaign is failed, stay as standby role.
@@ -48,7 +46,7 @@ func (c *Campaign) Start(taskManagement *metadata.TaskManagement, isMaster *atom
 			case <-ticker.C:
 				if isMaster.Load() {
 					// Try to update the lease in the db.
-					success, err := c.tryUpdateLease()
+					success, err := dataManagement.TryUpdateLease(c.ServerID, c.config.LeaseDuration)
 					if err != nil {
 						// Log the error.
 						return err
@@ -56,12 +54,12 @@ func (c *Campaign) Start(taskManagement *metadata.TaskManagement, isMaster *atom
 					if !success {
 						// Update lease failed, transfer to standby role.
 						isMaster.Store(false)
-						taskManagement.SetReady(false)
+						dataManagement.SetReady(false)
 					}
 				} else {
 					// Campaign the master role.
 					// If the master lease is expired, the standby meta-server will take over the master role.
-					success, err := c.tryCampaignMaster()
+					success, err := dataManagement.TryCampaignMaster(c.ServerID, c.config.LeaseDuration)
 					if err != nil {
 						// Log the error.
 						return err
@@ -71,15 +69,14 @@ func (c *Campaign) Start(taskManagement *metadata.TaskManagement, isMaster *atom
 						isMaster.Store(true)
 
 						// Load tasks from db after this meta-server takes over the master role.
-						if err := taskManagement.LoadAllTasks(c.dbPool); err != nil {
+						if err := dataManagement.LoadAllTasks(); err != nil {
 							// Log the error.
 							return err
 						}
 					} else {
 						// Get the current master from the db.
 						// This is used to response the client's request to tell the client who is the current master.
-						var master string
-						err := c.dbPool.DB.QueryRow("SELECT master FROM tistream.owner WHERE id = 1").Scan(&master)
+						master, err := dataManagement.GetMaster()
 						if err != nil {
 							// Log the error.
 							return err
@@ -98,43 +95,6 @@ func (c *Campaign) Start(taskManagement *metadata.TaskManagement, isMaster *atom
 			}
 		}
 	})
-}
-
-func (c *Campaign) tryUpdateLease() (bool, error) {
-	// Only update lease when the `master` colunn value is this server itself.
-	res, err := c.dbPool.Exec("UPDATE tistream.owner SET lease = NOW() + INTERVAL ? SECOND WHERE id = 1 and master = ?",
-		c.config.LeaseDuration, c.ServerID)
-	if err != nil {
-		return false, err
-	}
-	affectedRows, err := res.RowsAffected()
-	if err != nil {
-		return false, err
-	}
-	if affectedRows == 1 {
-		return true, nil
-	}
-	return false, nil
-}
-
-func (c *Campaign) tryCampaignMaster() (bool, error) {
-	// Campaign the master role.
-	// If the master lease is expired, the standby meta-server will take over the master role.
-	res, err := c.dbPool.DB.Exec("UPDATE tistream.owner SET master = ?, lease = NOW() + INTERVAL ? SECOND WHERE id = 1 AND lease < NOW()",
-		c.ServerID, c.config.LeaseDuration)
-	if err != nil {
-		return false, err
-	}
-	affectedRows, err := res.RowsAffected()
-	if err != nil {
-		return false, err
-	}
-	if affectedRows == 1 {
-		// The standby meta-server takes over the master role.
-		return true, nil
-	}
-
-	return false, nil
 }
 
 func (c *Campaign) CurrentMaster() string {

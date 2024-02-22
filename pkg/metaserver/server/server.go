@@ -14,14 +14,12 @@ import (
 type MetaServer struct {
 	// Global configuration.
 	globalConfig *utils.GlobalConfig
-	// DB pool.
-	dbPool *utils.DBPool
 
 	// The gRPC server.
 	grpcServer *utils.GrpcServer
 
 	// The task management.
-	taskManagement *metadata.TaskManagement
+	dataManagement *metadata.DataManagement
 
 	// Master campaign.
 	campaign *Campaign
@@ -35,32 +33,27 @@ type MetaServer struct {
 	isMaster atomic.Bool
 }
 
-func NewMetaServer(globalConfig *utils.GlobalConfig) *MetaServer {
+func NewMetaServer(globalConfig *utils.GlobalConfig) (*MetaServer, error) {
 	ctx, cancel := context.WithCancel(context.Background())
 	eg, ctx := errgroup.WithContext(ctx)
 
+	dataManagement, err := metadata.NewDataManagement(&globalConfig.MetaServer)
+	if err != nil {
+		return nil, err
+	}
+
 	return &MetaServer{
 		globalConfig:   globalConfig,
-		taskManagement: metadata.NewTaskManagement(),
+		dataManagement: dataManagement,
 		eg:             eg,
 		ctx:            ctx,
 		cancel:         cancel,
-	}
+	}, nil
 }
 
 func (s *MetaServer) Prepare() error {
-	// Connect to backend DB.
-	dbPool, err := utils.NewDBPool(s.globalConfig.MetaServer.MysqlHost,
-		s.globalConfig.MetaServer.MysqlPort,
-		s.globalConfig.MetaServer.MysqlUser, s.globalConfig.MetaServer.MysqlPassword, "")
-	if err != nil {
-		return err
-	}
-	s.dbPool = dbPool
-
 	// Initialize the schema if not exists.
-	bootstrapper := metadata.NewBootstrapper(s.dbPool)
-	if err := bootstrapper.InitSchema(); err != nil {
+	if err := s.dataManagement.Backend().Bootstrap(); err != nil {
 		return err
 	}
 

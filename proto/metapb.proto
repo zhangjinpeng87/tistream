@@ -37,6 +37,8 @@ message Task {
     uint32 tenant_id = 1;
     bytes range_start = 2;
     bytes range_end = 3;
+    uint32 sorter_id = 4;
+    string snap_addr = 5;
 }
 
 message TaskStats {

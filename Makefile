@@ -4,7 +4,11 @@ SRC = $(shell find . -type f -name '*.go' -not -path "./proto/*")
 
 build:
 	@echo "Building..."
-	@GO111MODULE=on go build -o bin/$(APP_NAME) cmd/$(APP_NAME)/main.go
+	@GO111MODULE=on go build -o bin/meta-server cmd/meta-server/main.go;
+	@GO111MODULE=on go build -o bin/api-server cmd/api-server/main.go;
+	@GO111MODULE=on go build -o bin/dispatcher cmd/dispatcher/main.go;
+	@GO111MODULE=on go build -o bin/remote-sorter cmd/remote-sorter/main.go;
+	@GO111MODULE=on go build -o bin/schema-registry cmd/schema-registry/main.go;
 	@echo "Build complete"
 
 proto_gen:
