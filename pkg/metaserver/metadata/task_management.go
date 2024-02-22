@@ -7,7 +7,7 @@ import (
 	"github.com/zhangjinpeng87/tistream/pkg/utils"
 )
 
-type DataManagement struct {
+type TaskManagement struct {
 	sync.RWMutex
 
 	// tenantId -> Tasks
@@ -16,46 +16,29 @@ type DataManagement struct {
 	dataIsReady atomic.Bool
 }
 
-func NewDataManagement(config *utils.MetaServerConfig) (*DataManagement, error) {
-	backend, err := NewBackend(config)
-	if err != nil {
-		return nil, err
-	}
-
-	return &DataManagement{
+func NewTaskManagement(config *utils.MetaServerConfig, backend *Backend) *TaskManagement {
+	return &TaskManagement{
 		tasks:   make(map[uint32]*TenantTasks),
 		backend: backend,
-	}, nil
+	}
 }
 
-func (t *DataManagement) Close() {
-	t.backend.Close()
-}
-
-func (t *DataManagement) TryCampaignMaster(who string, leaseDur int) (bool, error) {
-	return t.backend.TryCampaignMaster(who, leaseDur)
-}
-
-func (t *DataManagement) TryUpdateLease(who string, leaseDur int) (bool, error) {
-	return t.backend.TryUpdateLease(who, leaseDur)
-}
-
-func (t *DataManagement) GetMaster() (string, error) {
-	return t.backend.GetMaster()
+func (t *TaskManagement) Prepare() error {
+	return t.backend.BootstrapSchema()
 }
 
 // DataIsReady returns true if the data is ready.
-func (t *DataManagement) DataIsReady() bool {
+func (t *TaskManagement) DataIsReady() bool {
 	return t.dataIsReady.Load()
 }
 
-func (t *DataManagement) SetReady(b bool) {
+func (t *TaskManagement) SetReady(b bool) {
 	t.dataIsReady.Store(b)
 }
 
 // LoadAllTasks loads all tasks from the db. The db is the source of truth.
 // This function should be called when the meta-server campaign as master.
-func (t *DataManagement) LoadAllTasks() error {
+func (t *TaskManagement) LoadAllTasks() error {
 	// Clean up the tasks.
 	t.Lock()
 	t.tasks = make(map[uint32]*TenantTasks)
@@ -70,7 +53,7 @@ func (t *DataManagement) LoadAllTasks() error {
 	return nil
 }
 
-func (t *DataManagement) AddTask(tenantId uint32, task TenantTask) {
+func (t *TaskManagement) AddTask(tenantId uint32, task TenantTask) {
 	t.Lock()
 	defer t.Unlock()
 
@@ -83,7 +66,7 @@ func (t *DataManagement) AddTask(tenantId uint32, task TenantTask) {
 	}
 }
 
-func (t *DataManagement) RemoveTask(tenantId uint32, rangeStart RangeStart) {
+func (t *TaskManagement) RemoveTask(tenantId uint32, rangeStart RangeStart) {
 	t.Lock()
 	defer t.Unlock()
 
@@ -92,14 +75,14 @@ func (t *DataManagement) RemoveTask(tenantId uint32, rangeStart RangeStart) {
 	}
 }
 
-func (t *DataManagement) RemoveTenant(tenantId uint32) {
+func (t *TaskManagement) RemoveTenant(tenantId uint32) {
 	t.Lock()
 	defer t.Unlock()
 
 	delete(t.tasks, tenantId)
 }
 
-func (t *DataManagement) GetTask(tenantId uint32, rangeStart RangeStart) *TenantTask {
+func (t *TaskManagement) GetTask(tenantId uint32, rangeStart RangeStart) *TenantTask {
 	t.RLock()
 	defer t.RUnlock()
 

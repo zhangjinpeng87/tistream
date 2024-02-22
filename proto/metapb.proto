@@ -4,11 +4,11 @@ package tistreampb;
 option go_package = "./";
 
 // Upstream notify downstream there are new data change files for specified tenants.
-message UpdateNotificationReq {
+message HasNewChangeReq {
     repeated uint32 tenant_id = 1;
 }
 
-message UpdateNotificationResp {
+message HasNewChangeResp {
 }
 
 message DispatcherHeartbeatReq {

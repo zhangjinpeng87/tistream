@@ -18,7 +18,7 @@ type GrpcServer struct {
 	listener *net.Listener
 
 	// The internal grpc server.
-	internalServer *grpc.Server
+	InternalServer *grpc.Server
 }
 
 // NewGrpcServer creates a new TcpServer.
@@ -26,13 +26,8 @@ func NewGrpcServer(addr string, port int) *GrpcServer {
 	return &GrpcServer{
 		addr:           addr,
 		port:           port,
-		internalServer: grpc.NewServer(),
+		InternalServer: grpc.NewServer(),
 	}
-}
-
-// RegisterService registers the service to the server.
-func (s *GrpcServer) RegisterService(sd *grpc.ServiceDesc) {
-	s.internalServer.RegisterService(sd, struct{}{})
 }
 
 // Start starts the server.
@@ -47,7 +42,7 @@ func (s *GrpcServer) Start(eg *errgroup.Group, ctx context.Context) error {
 
 	// Start the server.
 	eg.Go(func() error {
-		if err := s.internalServer.Serve(*s.listener); err != nil {
+		if err := s.InternalServer.Serve(*s.listener); err != nil {
 			return err
 		}
 		return nil
@@ -58,7 +53,7 @@ func (s *GrpcServer) Start(eg *errgroup.Group, ctx context.Context) error {
 
 // Stop stops the server.
 func (s *GrpcServer) Stop() error {
-	s.internalServer.Stop()
+	s.InternalServer.Stop()
 	(*s.listener).Close()
 	return nil
 }

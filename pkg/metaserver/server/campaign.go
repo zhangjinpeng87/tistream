@@ -20,9 +20,13 @@ type Campaign struct {
 	sync.RWMutex
 	ServerID string
 
-	config *utils.MetaServerConfig
+	config  *utils.MetaServerConfig
+	backend *metadata.Backend
 
-	// Current Master
+	// Am I master?
+	isMaster atomic.Bool
+
+	// Who is current Master?
 	currentMaster string
 }
 
@@ -35,7 +39,7 @@ func NewCampaign(config *utils.MetaServerConfig) *Campaign {
 	}
 }
 
-func (c *Campaign) Start(dataManagement *metadata.DataManagement, isMaster *atomic.Bool, eg *errgroup.Group, ctx context.Context) {
+func (c *Campaign) Start(taskManagement *metadata.TaskManagement, eg *errgroup.Group, ctx context.Context) {
 	// Start the campaign.
 	// If the campaign is successful, set the role to master.
 	// If the campaign is failed, stay as standby role.
@@ -44,39 +48,39 @@ func (c *Campaign) Start(dataManagement *metadata.DataManagement, isMaster *atom
 		for {
 			select {
 			case <-ticker.C:
-				if isMaster.Load() {
+				if c.isMaster.Load() {
 					// Try to update the lease in the db.
-					success, err := dataManagement.TryUpdateLease(c.ServerID, c.config.LeaseDuration)
+					success, err := c.backend.TryUpdateLease(c.ServerID, c.config.LeaseDuration)
 					if err != nil {
 						// Log the error.
 						return err
 					}
 					if !success {
 						// Update lease failed, transfer to standby role.
-						isMaster.Store(false)
-						dataManagement.SetReady(false)
+						c.isMaster.Store(false)
+						taskManagement.SetReady(false)
 					}
 				} else {
 					// Campaign the master role.
 					// If the master lease is expired, the standby meta-server will take over the master role.
-					success, err := dataManagement.TryCampaignMaster(c.ServerID, c.config.LeaseDuration)
+					success, err := c.backend.TryCampaignMaster(c.ServerID, c.config.LeaseDuration)
 					if err != nil {
 						// Log the error.
 						return err
 					}
 					if success {
 						// Set this meta-server as master.
-						isMaster.Store(true)
+						c.isMaster.Store(true)
 
 						// Load tasks from db after this meta-server takes over the master role.
-						if err := dataManagement.LoadAllTasks(); err != nil {
+						if err := taskManagement.LoadAllTasks(); err != nil {
 							// Log the error.
 							return err
 						}
 					} else {
 						// Get the current master from the db.
 						// This is used to response the client's request to tell the client who is the current master.
-						master, err := dataManagement.GetMaster()
+						master, err := c.backend.GetMaster()
 						if err != nil {
 							// Log the error.
 							return err
@@ -102,4 +106,8 @@ func (c *Campaign) CurrentMaster() string {
 	defer c.Unlock()
 
 	return c.currentMaster
+}
+
+func (c *Campaign) IsMaster() bool {
+	return c.isMaster.Load()
 }

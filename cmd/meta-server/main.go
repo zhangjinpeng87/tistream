@@ -21,7 +21,11 @@ func main() {
 		os.Exit(1)
 	}
 
-	metaServer := server.NewMetaServer(&globalConfig)
+	metaServer, err := server.NewMetaServer(&globalConfig)
+	if err != nil {
+		fmt.Printf("Create meta server failed: %v\n", err)
+		os.Exit(1)
+	}
 	if err := metaServer.Prepare(); err != nil {
 		fmt.Printf("Prepare meta server failed: %v\n", err)
 		os.Exit(1)

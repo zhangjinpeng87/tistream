@@ -22,7 +22,7 @@ const _ = grpc.SupportPackageIsVersion7
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type MetaServiceClient interface {
-	UpdateNotify(ctx context.Context, in *UpdateNotificationReq, opts ...grpc.CallOption) (*UpdateNotificationResp, error)
+	TenantHasNewChange(ctx context.Context, in *HasNewChangeReq, opts ...grpc.CallOption) (*HasNewChangeResp, error)
 	DispatcherHeartbeat(ctx context.Context, in *DispatcherHeartbeatReq, opts ...grpc.CallOption) (*DispatcherHeartbeatResp, error)
 	SorterHeartbeat(ctx context.Context, in *SorterHeartbeatReq, opts ...grpc.CallOption) (*SorterHeartbeatResp, error)
 }
@@ -35,9 +35,9 @@ func NewMetaServiceClient(cc grpc.ClientConnInterface) MetaServiceClient {
 	return &metaServiceClient{cc}
 }
 
-func (c *metaServiceClient) UpdateNotify(ctx context.Context, in *UpdateNotificationReq, opts ...grpc.CallOption) (*UpdateNotificationResp, error) {
-	out := new(UpdateNotificationResp)
-	err := c.cc.Invoke(ctx, "/tistreampb.MetaService/UpdateNotify", in, out, opts...)
+func (c *metaServiceClient) TenantHasNewChange(ctx context.Context, in *HasNewChangeReq, opts ...grpc.CallOption) (*HasNewChangeResp, error) {
+	out := new(HasNewChangeResp)
+	err := c.cc.Invoke(ctx, "/tistreampb.MetaService/TenantHasNewChange", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -66,7 +66,7 @@ func (c *metaServiceClient) SorterHeartbeat(ctx context.Context, in *SorterHeart
 // All implementations must embed UnimplementedMetaServiceServer
 // for forward compatibility
 type MetaServiceServer interface {
-	UpdateNotify(context.Context, *UpdateNotificationReq) (*UpdateNotificationResp, error)
+	TenantHasNewChange(context.Context, *HasNewChangeReq) (*HasNewChangeResp, error)
 	DispatcherHeartbeat(context.Context, *DispatcherHeartbeatReq) (*DispatcherHeartbeatResp, error)
 	SorterHeartbeat(context.Context, *SorterHeartbeatReq) (*SorterHeartbeatResp, error)
 	mustEmbedUnimplementedMetaServiceServer()
@@ -76,8 +76,8 @@ type MetaServiceServer interface {
 type UnimplementedMetaServiceServer struct {
 }
 
-func (UnimplementedMetaServiceServer) UpdateNotify(context.Context, *UpdateNotificationReq) (*UpdateNotificationResp, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method UpdateNotify not implemented")
+func (UnimplementedMetaServiceServer) TenantHasNewChange(context.Context, *HasNewChangeReq) (*HasNewChangeResp, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method TenantHasNewChange not implemented")
 }
 func (UnimplementedMetaServiceServer) DispatcherHeartbeat(context.Context, *DispatcherHeartbeatReq) (*DispatcherHeartbeatResp, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method DispatcherHeartbeat not implemented")
@@ -98,20 +98,20 @@ func RegisterMetaServiceServer(s grpc.ServiceRegistrar, srv MetaServiceServer) {
 	s.RegisterService(&MetaService_ServiceDesc, srv)
 }
 
-func _MetaService_UpdateNotify_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(UpdateNotificationReq)
+func _MetaService_TenantHasNewChange_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(HasNewChangeReq)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(MetaServiceServer).UpdateNotify(ctx, in)
+		return srv.(MetaServiceServer).TenantHasNewChange(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/tistreampb.MetaService/UpdateNotify",
+		FullMethod: "/tistreampb.MetaService/TenantHasNewChange",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(MetaServiceServer).UpdateNotify(ctx, req.(*UpdateNotificationReq))
+		return srv.(MetaServiceServer).TenantHasNewChange(ctx, req.(*HasNewChangeReq))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -160,8 +160,8 @@ var MetaService_ServiceDesc = grpc.ServiceDesc{
 	HandlerType: (*MetaServiceServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
-			MethodName: "UpdateNotify",
-			Handler:    _MetaService_UpdateNotify_Handler,
+			MethodName: "TenantHasNewChange",
+			Handler:    _MetaService_TenantHasNewChange_Handler,
 		},
 		{
 			MethodName: "DispatcherHeartbeat",

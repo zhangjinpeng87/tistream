@@ -1,6 +1,6 @@
 # TiStream
 
-A cloud-native data change stream service for TiDB Cloud. See [design](./docs/design/tistream.md) for more details.
+A cloud-native data change stream service for TiDB Cloud. See [design](./docs/design/20240220-tistream.md) for more details.
 
 ## Code Structure
 

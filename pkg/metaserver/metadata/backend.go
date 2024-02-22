@@ -26,7 +26,7 @@ func (b *Backend) Close() {
 	b.db.Close()
 }
 
-func (b *Backend) Bootstrap() error {
+func (b *Backend) BootstrapSchema() error {
 	// Create database tistream if not exists.
 	_, err := b.db.Exec("CREATE DATABASE IF NOT EXISTS tistream")
 	if err != nil {
@@ -149,7 +149,7 @@ func (b *Backend) TryCampaignMaster(who string, leaseDurSec int) (bool, error) {
 // Return error if the task already exists. TenantID and RangeStart are unique to indicate a task.
 func (b *Backend) AddTask(task *TenantTask) error {
 	res, err := b.db.Exec("INSERT INTO tistream.tasks (tenant_id, range_start, range_end, sorter, snapshot_addr) VALUES (?, ?, ?, ?, ?, ?)",
-		task.InternalTask.TenantId, string(task.InternalTask.RangeStart), string(task.InternalTask.RangeEnd), task.AssignedSorter, task.SnapshotAddr)
+		task.InternalTask.TenantId, string(task.InternalTask.RangeStart), string(task.InternalTask.RangeEnd), task.InternalTask.SorterId, task.InternalTask.SnapAddr)
 	if err != nil {
 		return fmt.Errorf("failed to insert task: %v", err)
 	}
@@ -182,7 +182,7 @@ func (b *Backend) RemoveTask(tenantID uint32, rangeStart []byte) (bool, error) {
 // Return true if the task is modified, false if the task doesn't exist.
 func (b *Backend) ModifyTask(task *TenantTask) (bool, error) {
 	res, err := b.db.Exec("UPDATE tistream.tasks SET sorter = ?, snapshot_addr = ?, range_end = ? WHERE tenant_id = ? AND range_start = ?",
-		task.AssignedSorter, task.SnapshotAddr, task.InternalTask.RangeEnd, task.InternalTask.TenantId, string(task.InternalTask.RangeStart))
+		task.InternalTask.SorterId, task.InternalTask.SnapAddr, task.InternalTask.RangeEnd, task.InternalTask.TenantId, string(task.InternalTask.RangeStart))
 	if err != nil {
 		return false, fmt.Errorf("failed to modify task: %v", err)
 	}
@@ -216,13 +216,13 @@ func (b *Backend) LoadAllTasks(f func(t uint32, task *TenantTask)) error {
 			TenantId:   tenantID,
 			RangeStart: []byte(rangeStart),
 			RangeEnd:   []byte(rangeEnd),
-			SorterId:  sorter,
-			SnapAddr: snapshotAddr,
+			SorterId:   sorter,
+			SnapAddr:   snapshotAddr,
 		}
 
 		task := &TenantTask{
-			RangeStart:    []byte(rangeStart),
-			InternalTask:   pbTask,
+			RangeStart:   []byte(rangeStart),
+			InternalTask: pbTask,
 		}
 
 		f(tenantID, task)

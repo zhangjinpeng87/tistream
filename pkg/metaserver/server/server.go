@@ -2,7 +2,6 @@ package server
 
 import (
 	"context"
-	"sync/atomic"
 
 	"github.com/zhangjinpeng87/tistream/pkg/metaserver/metadata"
 	"github.com/zhangjinpeng87/tistream/pkg/utils"
@@ -18,33 +17,37 @@ type MetaServer struct {
 	// The gRPC server.
 	grpcServer *utils.GrpcServer
 
+	// Meta Backend. Used to store the metadata like tasks, tenants, lease, etc.
+	backend *metadata.Backend
+
 	// The task management.
-	dataManagement *metadata.DataManagement
+	taskManagement *metadata.TaskManagement
 
 	// Master campaign.
 	campaign *Campaign
 	eg       *errgroup.Group
 	ctx      context.Context
 	cancel   context.CancelFunc
-
-	// Indicate if this meta-server is master role.
-	// Only master meta-server can serve the requests from the client.
-	// Other-wise return the correct current master address to the client.
-	isMaster atomic.Bool
 }
 
 func NewMetaServer(globalConfig *utils.GlobalConfig) (*MetaServer, error) {
-	ctx, cancel := context.WithCancel(context.Background())
-	eg, ctx := errgroup.WithContext(ctx)
-
-	dataManagement, err := metadata.NewDataManagement(&globalConfig.MetaServer)
+	// Initialize the backend.
+	backend, err := metadata.NewBackend(&globalConfig.MetaServer)
 	if err != nil {
 		return nil, err
 	}
 
+	// Initialize the task management.
+	taskManagement := metadata.NewTaskManagement(&globalConfig.MetaServer, backend)
+
+	// Initialize the errgroup and context.
+	ctx, cancel := context.WithCancel(context.Background())
+	eg, ctx := errgroup.WithContext(ctx)
+
 	return &MetaServer{
 		globalConfig:   globalConfig,
-		dataManagement: dataManagement,
+		taskManagement: taskManagement,
+		backend:        backend,
 		eg:             eg,
 		ctx:            ctx,
 		cancel:         cancel,
@@ -53,23 +56,24 @@ func NewMetaServer(globalConfig *utils.GlobalConfig) (*MetaServer, error) {
 
 func (s *MetaServer) Prepare() error {
 	// Initialize the schema if not exists.
-	if err := s.dataManagement.Backend().Bootstrap(); err != nil {
+	if err := s.taskManagement.Prepare(); err != nil {
 		return err
 	}
 
 	// Start the master campaign.
-	s.campaign = NewCampaign(s.dbPool, &s.globalConfig.MetaServer)
-	s.campaign.Start(s.taskManagement, &s.isMaster, s.eg, s.ctx)
+	s.campaign = NewCampaign(&s.globalConfig.MetaServer)
+	s.campaign.Start(s.taskManagement, s.eg, s.ctx)
 
 	// Initialize the gRPC server.
 	s.grpcServer = utils.NewGrpcServer(s.globalConfig.MetaServer.Addr, s.globalConfig.MetaServer.Port)
-	s.grpcServer.RegisterService(&pb.MetaService_serviceDesc)
+	pb.RegisterMetaServiceServer(s.grpcServer.InternalServer, NewMetaRpcServer(s.taskManagement))
 
 	return nil
 }
 
 func (s *MetaServer) ReadyToServe() bool {
-	return s.isMaster.Load() && s.taskManagement.DataIsReady()
+	// Only master meta-server can serve the requests from the client.
+	return s.campaign.IsMaster() && s.taskManagement.DataIsReady()
 }
 
 func (s *MetaServer) Start() error {
@@ -82,7 +86,6 @@ func (s *MetaServer) Wait() error {
 
 func (s *MetaServer) Stop() error {
 	s.cancel()
-	s.dbPool.Close()
 	s.eg.Wait()
 	return s.grpcServer.Stop()
 }
