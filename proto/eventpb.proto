@@ -1,0 +1,35 @@
+syntax = "proto3";
+package tistreampb;
+
+option go_package = "./";
+
+enum OpType {
+    UNKNOWN = 0;
+    PREWRITE = 1;
+    COMMIT = 2;
+    ROLLBACK = 3;
+}
+
+message EventRow {
+    uint64 start_ts = 1;
+    uint64 commit_ts = 2;
+    OpType op_type = 3;
+
+    bytes key = 4;
+    bytes value = 5;
+    bytes old_value = 6;
+}
+
+message EventWatermark {
+    uint64 ts = 1;
+
+    uint64 range_id = 2;
+    uint64 range_version = 3;
+    bytes range_start = 4;
+    bytes range_end = 5;
+}
+
+message EventBatch {
+    repeated EventRow rows = 1;
+    repeated EventWatermark watermark = 2;
+}

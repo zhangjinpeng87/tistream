@@ -1,6 +1,5 @@
 package datachangebuffer
 
-
 import (
 	"github.com/zhangjinpeng87/tistream/pkg/storage"
 )

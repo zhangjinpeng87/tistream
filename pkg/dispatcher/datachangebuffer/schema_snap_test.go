@@ -28,7 +28,7 @@ func TestSchemaSnap_EncodeDecode(t *testing.T) {
 		Columns: []*model.ColumnInfo{column1},
 	}
 
-	schemaSnap := NewSchemaSnap()
+	schemaSnap := NewEmptySchemaSnap()
 	schemaSnap.dbs = append(schemaSnap.dbs, dbInfo)
 	schemaSnap.tables = append(schemaSnap.tables, tableInfo)
 	schemaSnap.currentTs = 123
@@ -46,7 +46,7 @@ func TestSchemaSnap_EncodeDecode(t *testing.T) {
 	}
 
 	// Read the file and decode the schema snap.
-	schemaSnap2 := NewSchemaSnap()
+	schemaSnap2 := NewEmptySchemaSnap()
 	file.Seek(0, 0)
 	err = schemaSnap2.DecodeFrom(file)
 	if err != nil {

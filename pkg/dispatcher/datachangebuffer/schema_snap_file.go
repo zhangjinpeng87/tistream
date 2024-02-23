@@ -24,7 +24,7 @@ type SchemaSnap struct {
 }
 
 // NewSchemaSnap creates a new SchemaSnap.
-func NewSchemaSnap() *SchemaSnap {
+func NewEmptySchemaSnap() *SchemaSnap {
 	return &SchemaSnap{
 		dbs:       make([]*model.DBInfo, 0),
 		tables:    make([]*model.TableInfo, 0),

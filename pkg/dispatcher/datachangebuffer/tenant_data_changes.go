@@ -1,6 +1,8 @@
 package datachangebuffer
 
 import (
+	"bytes"
+
 	"github.com/zhangjinpeng87/tistream/pkg/storage"
 )
 
@@ -19,10 +21,10 @@ const (
 // |  |  |____file-{ts}
 // |  |____store-{3}
 // |     |____file-{ts}
-// 
+//
 // There are 2 types of files:
 //  1. schema_snap: the schema snapshot file.
-//  2. file-{ts}: the data change file. It contains the data change events for a specified 
+//  2. file-{ts}: the data change file. It contains the data change events for a specified
 //     time range for a specified store.
 
 // Tenant is the data change buffer for a tenant.
@@ -41,17 +43,29 @@ type TenantDataChanges struct {
 // NewTenantDataChanges creates a new TenantDataChanges.
 func NewTenantDataChanges(tenantID int, rootDir string, backendStorage storage.BackendStorage) *TenantDataChanges {
 	return &TenantDataChanges{
-		tenantID: tenantID,
-		rootDir: rootDir,
+		tenantID:       tenantID,
+		rootDir:        rootDir,
 		backendStorage: backendStorage,
 	}
 }
 
 // GetSchemaSnap returns the schema snapshot of this tenant.
-func (t *TenantDataChanges) GetSchemaSnap() ([]byte, error) {
+func (t *TenantDataChanges) GetSchemaSnap() (*SchemaSnap, error) {
 	filePath := t.rootDir + schemaSnap
 
-	return t.backendStorage.GetFile(filePath)
+	content, err := t.backendStorage.GetFile(filePath)
+	if err != nil {
+		return nil, err
+	}
+
+	schemaSnap := NewEmptySchemaSnap()
+	reader := bytes.NewReader(content)
+	err = schemaSnap.DecodeFrom(reader)
+	if err != nil {
+		return nil, err
+	}
+
+	return schemaSnap, nil
 }
 
 // ListStoreDirs returns the list of store directories.
