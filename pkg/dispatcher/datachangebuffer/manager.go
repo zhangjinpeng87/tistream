@@ -1,10 +1,11 @@
 package datachangebuffer
 
 import (
+	"context"
 	"fmt"
 	"strconv"
 	"sync"
-	"context"
+
 	"golang.org/x/sync/errgroup"
 
 	"github.com/zhangjinpeng87/tistream/pkg/storage"
@@ -40,13 +41,23 @@ type DataChangeBufferManager struct {
 
 	// TenantID -> TenantDataChanges
 	tenantChanges map[uint64]*TenantDataChanges
+	// TenantID -> channel to notify the tenant has new data change files.
+	tenantChannels map[uint64]chan struct{}
+
+	// The context to cancel the running goroutines.
+	ctx context.Context
+	eg  *errgroup.Group
 }
 
-func NewDataChangeBufferManager(cfg *utils.DispatcherConfig, backendStorage storage.BackendStorage) *DataChangeBufferManager {
+func NewDataChangeBufferManager(ctx context.Context, cfg *utils.DispatcherConfig, backendStorage storage.BackendStorage) *DataChangeBufferManager {
+	eg, ctx := errgroup.WithContext(ctx)
+
 	return &DataChangeBufferManager{
+		ctx:            ctx,
+		eg:             eg,
 		backendStorage: backendStorage,
-		cfg:         cfg,
-		tenantChanges: make(map[uint64]*TenantDataChanges),
+		cfg:            cfg,
+		tenantChanges:  make(map[uint64]*TenantDataChanges),
 	}
 }
 
@@ -61,6 +72,10 @@ func (m *DataChangeBufferManager) AttachTenant(tenantID uint64) error {
 	tenantChanges := NewTenantDataChanges(tenantID, strconv.FormatUint(tenantID, 10), m.backendStorage)
 	m.tenantChanges[tenantID] = tenantChanges
 
+	// Create channel to notify the tenant has new data change files.
+	c := make(chan struct{}, 8)
+	m.tenantChannels[tenantID] = c
+
 	return nil
 }
 
@@ -73,23 +88,26 @@ func (m *DataChangeBufferManager) DetachTenant(tenantID uint64) error {
 	}
 
 	delete(m.tenantChanges, tenantID)
+	close(m.tenantChannels[tenantID])
+	delete(m.tenantChannels, tenantID)
 
 	return nil
 }
 
 func (m *DataChangeBufferManager) Run(ctx context.Context) error {
-	eg, ctx := errgroup.WithContext(ctx)
-
-	
 	m.mu.RLock()
 	defer m.mu.RUnlock()
 
 	for _, tenantChanges := range m.tenantChanges {
-		eg.Go(func() { 
-			tenantChanges.Run(ctx, m.cfg.CheckStoreInterval, m.cfg.CheckStoreTimeout)
+		tc := tenantChanges
+		c, ok := m.tenantChannels[tenantChanges.tenantID]
+		if !ok {
+			return fmt.Errorf("tenant %d no notification channel", tenantChanges.tenantID)
+		}
+		m.eg.Go(func() error {
+			return tc.Run(ctx, m.cfg.CheckStoreInterval, m.cfg.CheckFileInterval, c)
 		})
 	}
 
 	return nil
-
 }

@@ -149,7 +149,7 @@ func (t *TenantDataChanges) GetSchemaSnap() (*SchemaSnap, error) {
 }
 
 // Run runs the tenant data changes.
-func (t *TenantDataChanges) Run(ctx context.Context, checkStoreInterval, checkFileInterval int) error {
+func (t *TenantDataChanges) Run(ctx context.Context, checkStoreInterval, checkFileInterval int, c <-chan struct{}) error {
 	// Initialize the tenant data changes.
 	if err := t.initialize(); err != nil {
 		return err
@@ -170,6 +170,14 @@ func (t *TenantDataChanges) Run(ctx context.Context, checkStoreInterval, checkFi
 				return err
 			}
 		case <-t2.C:
+			if err := t.iterateNewFileChanges(); err != nil {
+				return err
+			}
+		case _, ok := <-c:
+			if !ok {
+				// The channel is closed, return.
+				return nil
+			}
 			if err := t.iterateNewFileChanges(); err != nil {
 				return err
 			}
