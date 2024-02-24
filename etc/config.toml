@@ -9,6 +9,13 @@
 # addr = "127.0.0.1"
 # port = 20991
 
+## Prefix of data change buffer
+# prefix = ""
+## Check store changes interval, in seconds
+# check-store-interval = 10
+## Check file changes interval, in seconds.
+# check-file-interval = 5
+
 [sorter]
 # addr = "127.0.0.1"
 # port = 20992

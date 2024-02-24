@@ -89,5 +89,3 @@ func (f *DataChangesFileDecoder) DecodeFrom(reader io.Reader) error {
 
 	return nil
 }
-
-

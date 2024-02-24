@@ -20,6 +20,17 @@ type StorageConfig struct {
 type DispatcherConfig struct {
 	Addr string
 	Port int
+
+	// Prefix of the data change buffer.
+	Prefix string
+
+	// How often to check the store changes, in seconds.
+	// Store changes caused by upstream scale out or scale in.
+	// Default to 10 seconds.
+	CheckStoreInterval int
+	// How often to check the new file changes, in seconds.
+	// Default to 5 seconds.
+	CheckFileInterval int
 }
 
 type SorterConfig struct {
