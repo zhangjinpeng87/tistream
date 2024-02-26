@@ -1,20 +1,20 @@
 # log-level = "info"
 
-[external-storage]
-# url = "s3://tistream/bucket1"
-# security-key = ""
-# access-key = ""
-
 [dispatcher]
 # addr = "127.0.0.1"
 # port = 20991
 
-## Prefix of data change buffer
-# prefix = ""
 ## Check store changes interval, in seconds
 # check-store-interval = 10
 ## Check file changes interval, in seconds.
 # check-file-interval = 5
+
+[dispatcher.storage]
+# region = "us-west-1"
+# bucket = ""
+# prefix = "data-change-buffer"
+# access-key = ""
+# secure-key = ""
 
 [sorter]
 # addr = "127.0.0.1"

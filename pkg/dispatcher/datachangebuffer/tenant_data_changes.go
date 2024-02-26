@@ -8,10 +8,12 @@ import (
 	"sort"
 	"strconv"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/zhangjinpeng87/tistream/pkg/storage"
 	"github.com/zhangjinpeng87/tistream/pkg/utils"
+	pb "github.com/zhangjinpeng87/tistream/proto/go/tistreampb"
 )
 
 const (
@@ -45,16 +47,20 @@ type TenantDataChanges struct {
 	rootDir string
 
 	// Backend Storage
-	backendStorage storage.BackendStorage
+	backendStorage storage.ExternalStorage
 
 	// Mutex to protect the storesProgress.
 	mu sync.Mutex
 	// StoreID -> StoreProgress
 	storesProgress map[string]*StoreProgress
+
+	// Stats
+	// Throughput sinnce last report.
+	throughput atomic.Uint64
 }
 
 // NewTenantDataChanges creates a new TenantDataChanges.
-func NewTenantDataChanges(tenantID uint64, rootDir string, backendStorage storage.BackendStorage) *TenantDataChanges {
+func NewTenantDataChanges(tenantID uint64, rootDir string, backendStorage storage.ExternalStorage) *TenantDataChanges {
 	return &TenantDataChanges{
 		tenantID:       tenantID,
 		rootDir:        rootDir,
@@ -149,17 +155,23 @@ func (t *TenantDataChanges) GetSchemaSnap() (*SchemaSnap, error) {
 }
 
 // Run runs the tenant data changes.
-func (t *TenantDataChanges) Run(ctx context.Context, checkStoreInterval, checkFileInterval int, c <-chan struct{}) error {
+func (t *TenantDataChanges) Run(ctx context.Context, checkStoreInterval, checkFileInterval int, recv <-chan struct{}, sender chan<- *pb.TenantSubStats) error {
 	// Initialize the tenant data changes.
 	if err := t.initialize(); err != nil {
 		return err
 	}
 
-	// Start the data change file watcher.
+	// Check the new store changes.
 	t1 := time.NewTicker(time.Duration(checkStoreInterval) * time.Second)
 	defer t1.Stop()
+
+	// Check the new file changes.
 	t2 := time.NewTicker(time.Duration(checkFileInterval) * time.Second)
 	defer t2.Stop()
+
+	// Report tenant stats.
+	t3 := time.NewTicker(time.Duration(5) * time.Second)
+	defer t3.Stop()
 
 	for {
 		select {
@@ -173,7 +185,14 @@ func (t *TenantDataChanges) Run(ctx context.Context, checkStoreInterval, checkFi
 			if err := t.iterateNewFileChanges(); err != nil {
 				return err
 			}
-		case _, ok := <-c:
+		case <-t3.C:
+			// Report the tenant stats.
+			throughput := t.throughput.Swap(0)
+			sender <- &pb.TenantSubStats{
+				TenantId:   t.tenantID,
+				Throughput: throughput,
+			}
+		case _, ok := <-recv:
 			if !ok {
 				// The channel is closed, return.
 				return nil
@@ -185,6 +204,8 @@ func (t *TenantDataChanges) Run(ctx context.Context, checkStoreInterval, checkFi
 	}
 }
 
+// iterateNewFileChanges iterates the new file changes.
+// Todo: use dedicated workers to handle the file changes.
 func (t *TenantDataChanges) iterateNewFileChanges() error {
 	// Lock the mutex.
 	t.mu.Lock()
@@ -213,9 +234,11 @@ func (t *TenantDataChanges) iterateNewFileChanges() error {
 			// If the file is not handled, handle it.
 			if ts > storeProgress.LatestHandledTs() {
 				// Handle the file.
-				if err := t.handleFile(storeProgress, ts); err != nil {
+				bytesHandled, err := t.handleFile(storeProgress, ts)
+				if err != nil {
 					return err
 				}
+				t.throughput.Add(bytesHandled)
 				storeProgress.Advance(ts)
 			}
 		}
@@ -225,35 +248,35 @@ func (t *TenantDataChanges) iterateNewFileChanges() error {
 }
 
 // handleFile handles the file.
-func (t *TenantDataChanges) handleFile(storeProgress *StoreProgress, ts uint64) error {
+func (t *TenantDataChanges) handleFile(storeProgress *StoreProgress, ts uint64) (uint64, error) {
 	// Read the file.
 	filePath := t.rootDir + storeProgress.storeDir + "/" + strconv.FormatUint(ts, 10)
 	content, err := t.backendStorage.GetFile(filePath)
 	if err != nil {
-		return err
+		return 0, err
 	}
 
 	// Verify the checksum of the file.
 	fileLen := len(content)
 	if fileLen <= 4 {
-		return utils.ErrInvalidDataChangeFile
+		return 0, utils.ErrInvalidDataChangeFile
 	}
 	checksum := binary.LittleEndian.Uint32(content[fileLen-4:])
 	if !utils.IsChecksumMatch(checksum, content[:fileLen-4]) {
-		return fmt.Errorf("file {} checksum not match", filePath)
+		return 0, fmt.Errorf("file {} checksum not match", filePath)
 	}
 
 	// Decode the file.
 	decoder := NewDataChangesFileDecoder()
 	reader := bytes.NewReader(content[:fileLen-4])
 	if err := decoder.DecodeFrom(reader); err != nil {
-		return err
+		return 0, err
 	}
 
 	// Dispatch the event rows to the ranges.
 	// Todo: dispatch the event rows to the ranges.
 
-	return nil
+	return uint64(fileLen), nil
 }
 
 // listStoreDirs returns the list of store directories.

@@ -3,16 +3,17 @@ package utils
 // GlobalConfig is the global configuration of the system.
 // Please refer to etc/config.toml for the details of each field.
 type GlobalConfig struct {
-	LogLevel        string
-	ExternalStorage StorageConfig
-	Dispatcher      DispatcherConfig
-	Sorter          SorterConfig
-	MetaServer      MetaServerConfig
-	ApiServer       ApiServerConfig
+	LogLevel   string
+	Dispatcher DispatcherConfig
+	Sorter     SorterConfig
+	MetaServer MetaServerConfig
+	ApiServer  ApiServerConfig
 }
 
 type StorageConfig struct {
-	Url         string
+	Region      string
+	Bucket      string
+	Prefix      string
 	SecurityKey string
 	AccessKey   string
 }
@@ -21,8 +22,8 @@ type DispatcherConfig struct {
 	Addr string
 	Port int
 
-	// Prefix of the data change buffer.
-	Prefix string
+	// storage configuration
+	Storage StorageConfig
 
 	// How often to check the store changes, in seconds.
 	// Store changes caused by upstream scale out or scale in.
