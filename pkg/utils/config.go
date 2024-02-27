@@ -22,6 +22,12 @@ type DispatcherConfig struct {
 	Addr string
 	Port int
 
+	MetaServerEndpoints []string
+
+	// If the dispatcher is isolated from the meta server for a long time,
+	// it will be paused.
+	SuicideDur int
+
 	// storage configuration
 	Storage StorageConfig
 

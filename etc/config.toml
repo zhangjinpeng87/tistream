@@ -9,6 +9,11 @@
 ## Check file changes interval, in seconds.
 # check-file-interval = 5
 
+## MetaServer Endpoints
+# meta-sever-endpoints = ["127.0.0.1:20993", "127.0.0.2:20993"]
+## If isolated from the meta-server exceeded suicide-dur, the dispatcher will be paused.
+# suicide-dur = 10
+
 [dispatcher.storage]
 # region = "us-west-1"
 # bucket = ""
