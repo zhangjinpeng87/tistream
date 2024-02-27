@@ -2,6 +2,8 @@
 
 A cloud-native data change stream service for TiDB Cloud. See [design](./docs/design/20240220-tistream.md) for more details.
 
+![image](docs/resources/tistream-arch.png)
+
 ## Code Structure
 
 - docs/design: feature or architecture design docs.

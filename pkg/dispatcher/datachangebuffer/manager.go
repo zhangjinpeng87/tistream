@@ -110,13 +110,13 @@ func (m *DataChangeBufferManager) Run(ctx context.Context) {
 	// Start the tenant data changes.
 	for _, tenantChanges := range m.tenantChanges {
 		tc := tenantChanges
-		c, ok := m.tenantChannels[tenantChanges.tenantID]
+		recv, ok := m.tenantChannels[tenantChanges.tenantID]
 		if !ok {
 			errMsg := fmt.Sprintf("tenant %d no notification channel", tenantChanges.tenantID)
 			panic(errMsg)
 		}
 		m.eg.Go(func() error {
-			return tc.Run(ctx, m.cfg.CheckStoreInterval, m.cfg.CheckFileInterval, c, m.statusCh)
+			return tc.Run(ctx, m.cfg.CheckStoreInterval, m.cfg.CheckFileInterval, recv, m.statusCh)
 		})
 	}
 
