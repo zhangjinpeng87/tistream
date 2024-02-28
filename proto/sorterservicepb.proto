@@ -1,0 +1,10 @@
+syntax = "proto3";
+package tistreampb;
+
+import "metapb.proto";
+
+option go_package = "./";
+
+service SorterService {
+    rpc NewDataChanges(tistreampb.RangeChangesReq) returns (tistreampb.RangeChangesResp);
+}

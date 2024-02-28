@@ -34,7 +34,7 @@ type DispatchServer struct {
 	cancel context.CancelFunc
 
 	// last heartbeat meta-server
-	lastMetaServerAddr string
+	lastMetaServerAddr       string
 	lastSuccessHeartbeatTime time.Time
 }
 
@@ -139,7 +139,7 @@ func (s *DispatchServer) sendHeartbeat(heartbeat *pb.DispatcherHeartbeatReq) {
 	// Failed to send heartbeat to all meta servers, if we cannot send heartbeat to any meta server for a long time,
 	// we should stop the dispatcher. This may happen when there is a network partition between the dispatcher and
 	// the meta server. In this case, the meta server would schedule these tenants' tasks to other dispatchers.
-	if time.Since(s.lastSuccessHeartbeatTime) > time.Duration(s.cfg.SuicideDur) * time.Second {
+	if time.Since(s.lastSuccessHeartbeatTime) > time.Duration(s.cfg.SuicideDur)*time.Second {
 		// Todo: Pause the dispatcher instead of stop until the received clear command from meta server.
 		s.Stop()
 	}

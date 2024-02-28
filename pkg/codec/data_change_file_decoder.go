@@ -1,4 +1,4 @@
-package datachangebuffer
+package codec
 
 import (
 	"encoding/binary"
@@ -29,7 +29,7 @@ type DataChangesFileDecoder struct {
 // NewDataChangesFileDecoder creates a new DataChanges.
 func NewDataChangesFileDecoder() *DataChangesFileDecoder {
 	return &DataChangesFileDecoder{
-		eventRows:      make([]*pb.EventRow, 0),
+		eventRows:       make([]*pb.EventRow, 0),
 		eventWatermarks: make([]*pb.EventWatermark, 0),
 	}
 }

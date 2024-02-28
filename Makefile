@@ -11,7 +11,7 @@ build:
 	@GO111MODULE=on go build -o bin/schema-registry cmd/schema-registry/main.go;
 	@echo "Build complete"
 
-proto_gen:
+gen_proto:
 	@echo "Generating go proto files..."
 	@protoc \
 		--proto_path=proto \
@@ -21,6 +21,11 @@ proto_gen:
 		--go-grpc_opt=paths=source_relative \
 		proto/*.proto
 	@echo "Go proto files generated"
+
+clean_proto:
+	@echo "Cleaning go proto files..."
+	@rm proto/go/tistreampb/*
+	@echo "Done"
 
 fmt:
 	@gofmt -l -w $(SRC)

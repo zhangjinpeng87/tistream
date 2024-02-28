@@ -1,4 +1,4 @@
-package datachangebuffer
+package codec
 
 import (
 	"encoding/binary"

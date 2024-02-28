@@ -11,6 +11,7 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/zhangjinpeng87/tistream/pkg/codec"
 	"github.com/zhangjinpeng87/tistream/pkg/storage"
 	"github.com/zhangjinpeng87/tistream/pkg/utils"
 	pb "github.com/zhangjinpeng87/tistream/proto/go/tistreampb"
@@ -136,7 +137,7 @@ func (t *TenantDataChanges) updateStores() error {
 }
 
 // GetSchemaSnap returns the schema snapshot of this tenant.
-func (t *TenantDataChanges) GetSchemaSnap() (*SchemaSnap, error) {
+func (t *TenantDataChanges) GetSchemaSnap() (*codec.SchemaSnap, error) {
 	filePath := t.rootDir + schemaSnap
 
 	content, err := t.backendStorage.GetFile(filePath)
@@ -144,7 +145,7 @@ func (t *TenantDataChanges) GetSchemaSnap() (*SchemaSnap, error) {
 		return nil, err
 	}
 
-	schemaSnap := NewEmptySchemaSnap()
+	schemaSnap := codec.NewEmptySchemaSnap()
 	reader := bytes.NewReader(content)
 	err = schemaSnap.DecodeFrom(reader)
 	if err != nil {
@@ -262,12 +263,12 @@ func (t *TenantDataChanges) handleFile(storeProgress *StoreProgress, ts uint64) 
 		return 0, utils.ErrInvalidDataChangeFile
 	}
 	checksum := binary.LittleEndian.Uint32(content[fileLen-4:])
-	if !utils.IsChecksumMatch(checksum, content[:fileLen-4]) {
-		return 0, fmt.Errorf("file {} checksum not match", filePath)
+	if !codec.IsChecksumMatch(checksum, content[:fileLen-4]) {
+		return 0, fmt.Errorf("file %s checksum not match", filePath)
 	}
 
 	// Decode the file.
-	decoder := NewDataChangesFileDecoder()
+	decoder := codec.NewDataChangesFileDecoder()
 	reader := bytes.NewReader(content[:fileLen-4])
 	if err := decoder.DecodeFrom(reader); err != nil {
 		return 0, err

@@ -1,6 +1,8 @@
 syntax = "proto3";
 package tistreampb;
 
+import "eventpb.proto";
+
 option go_package = "./";
 
 // Upstream notify downstream there are new data change files for specified tenants.
@@ -39,6 +41,15 @@ message Task {
     Range range = 2;
     string sorter_addr = 3;
     string snap_addr = 4;
+}
+
+message RangeChangesReq {
+    Task.Range range = 1;
+    repeated EventRow rows = 2;
+    repeated EventWatermark watermarks = 3;
+}
+
+message RangeChangesResp {
 }
 
 message TenantSubStats {
