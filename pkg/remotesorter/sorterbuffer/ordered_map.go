@@ -21,6 +21,9 @@ type OrderedEventMap interface {
 
 	// DelRange deletes the key-value pairs by the range.
 	DelRange(start, end string)
+
+	// Reset resets the map.
+	Reset()
 }
 
 // SkipListEventMap is the skip list based ordered event map.
@@ -82,6 +85,11 @@ func (m *SkipListEventMap) DelRange(start, end string) {
 		m.list.Remove(e.Key().(string))
 		e = e.Next()
 	}
+}
+
+// Reset resets the map.
+func (m *SkipListEventMap) Reset() {
+	m.list = skiplist.New(skiplist.StringAsc)
 }
 
 // LSMTreeEventMap is the LSM tree based ordered event map.

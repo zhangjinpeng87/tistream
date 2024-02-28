@@ -10,8 +10,8 @@ import (
 
 const (
 	// The magic number of the committed data file.
-	magicNumber = uint32(0x30541989)
-	fileVersion = uint32(1)
+	CommittedDataFileMagicNumber = uint32(0x30541989)
+	CommittedDataFileVersion = uint32(1)
 )
 
 type CommittedDataEncoder struct {
@@ -36,12 +36,12 @@ func NewCommittedDataEncoder(tenantID uint64, range_ *pb.Task_Range, lowWatermar
 
 func (c *CommittedDataEncoder) Encode(w io.Writer, events []*pb.EventRow) error {
 	// Write header.
-	if err := binary.Write(w, binary.LittleEndian, magicNumber); err != nil {
+	if err := binary.Write(w, binary.LittleEndian, CommittedDataFileMagicNumber); err != nil {
 		return err
 	}
 
 	// Write version.
-	if err := binary.Write(w, binary.LittleEndian, fileVersion); err != nil {
+	if err := binary.Write(w, binary.LittleEndian, CommittedDataFileVersion); err != nil {
 		return err
 	}
 

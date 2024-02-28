@@ -62,7 +62,7 @@ func (s *SorterBuffer) FlushCommittedData(lowWatermark, highWatermark uint64, pa
 		w.Flush()
 
 		// write to storage
-		xPath := fmt.Sprintf("%s/%020d-%020d", path, lowWatermark, highWatermark)
+		xPath := fmt.Sprintf("%s/%d-%s-%s/%020d-%020d", path, s.tenantID, s.Range.Start, s.Range.End, lowWatermark, highWatermark)
 
 		if err := s.externalStorage.PutFile(xPath, buf.Bytes()); err != nil {
 			// Todo: retry in case of external storage temporarily unavailable.
@@ -96,7 +96,7 @@ func (s *SorterBuffer) SaveSnapTo(path string) error {
 	w.Flush()
 
 	// write to storage
-	xPath := fmt.Sprintf("%s/%d-%d", path, s.Range.Start, s.Range.End)
+	xPath := fmt.Sprintf("%s/%d-%s-%s", path, s.tenantID, s.Range.Start, s.Range.End)
 
 	if err := s.externalStorage.PutFile(xPath, buf.Bytes()); err != nil {
 		return err
@@ -106,5 +106,33 @@ func (s *SorterBuffer) SaveSnapTo(path string) error {
 }
 
 func (s *SorterBuffer) LoadSnapFrom(path string) error {
+	// Reset the ordered event map.
+	s.orderedEventMap.Reset()
+
+	// Load the snap from storage.
+	xPath := fmt.Sprintf("%s/%d-%d", path, s.Range.Start, s.Range.End)
+	data, err := s.externalStorage.GetFile(xPath)
+	if err != nil {
+		return err
+	}
+
+	expectedChecksum := binary.LittleEndian.Uint32(data[len(data)-4:])
+	checksum := codec.CalcChecksum(data[:len(data)-4])
+	if expectedChecksum != checksum {
+		return fmt.Errorf("file %s checksum not match", xPath)
+	}
+
+	// Decode the snap.
+	decoder := codec.NewSorterBufferSnapDecoder(s.tenantID, s.Range)
+	reader := bytes.NewReader(data[:len(data)-4])
+	events, err := decoder.Decode(reader)
+	if err != nil {
+		return err
+	}
+
+	for _, event := range events {
+		s.orderedEventMap.Put(fmt.Sprintf("%020d-%s", event.CommitTs, event.Key), event)
+	}
+
 	return nil
 }

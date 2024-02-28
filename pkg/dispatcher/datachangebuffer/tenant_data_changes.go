@@ -262,8 +262,9 @@ func (t *TenantDataChanges) handleFile(storeProgress *StoreProgress, ts uint64) 
 	if fileLen <= 4 {
 		return 0, utils.ErrInvalidDataChangeFile
 	}
-	checksum := binary.LittleEndian.Uint32(content[fileLen-4:])
-	if !codec.IsChecksumMatch(checksum, content[:fileLen-4]) {
+	expectedChecksum := binary.LittleEndian.Uint32(content[fileLen-4:])
+	checksum := codec.CalcChecksum(content[:fileLen-4])
+	if expectedChecksum != checksum {
 		return 0, fmt.Errorf("file %s checksum not match", filePath)
 	}
 
