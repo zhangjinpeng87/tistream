@@ -1,4 +1,4 @@
-package sorterbuffer
+package sorter
 
 import (
 	"bufio"

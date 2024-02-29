@@ -1,4 +1,4 @@
-package sorterbuffer
+package sorter
 
 import (
 	pb "github.com/zhangjinpeng87/tistream/proto/go/tistreampb"

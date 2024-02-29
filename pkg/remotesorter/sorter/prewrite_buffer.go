@@ -1,4 +1,4 @@
-package prewritebuffer
+package sorter
 
 import (
 	"bufio"

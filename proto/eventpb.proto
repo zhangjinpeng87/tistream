@@ -31,5 +31,5 @@ message EventWatermark {
 
 message EventBatch {
     repeated EventRow rows = 1;
-    repeated EventWatermark watermark = 2;
+    repeated EventWatermark watermarks = 2;
 }
