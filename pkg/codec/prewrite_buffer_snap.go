@@ -158,17 +158,23 @@ func (p *PrewriteBufferSnapDecoder) decodeHeader(r io.Reader) (uint32, error) {
 	if err := binary.Read(r, binary.LittleEndian, &startLen); err != nil {
 		return 0, err
 	}
-	start := make([]byte, startLen)
-	if _, err := io.ReadFull(r, start); err != nil {
-		return 0, err
+	var start []byte
+	if startLen > 0 {
+		start := make([]byte, startLen)
+		if _, err := io.ReadFull(r, start); err != nil {
+			return 0, err
+		}
 	}
 	var endLen uint32
 	if err := binary.Read(r, binary.LittleEndian, &endLen); err != nil {
 		return 0, err
 	}
-	end := make([]byte, endLen)
-	if _, err := io.ReadFull(r, end); err != nil {
-		return 0, err
+	var end []byte
+	if endLen > 0 {
+		end := make([]byte, endLen)
+		if _, err := io.ReadFull(r, end); err != nil {
+			return 0, err
+		}
 	}
 	if string(start) != string(p.Range.Start) || string(end) != string(p.Range.End) {
 		return 0, utils.ErrUnmatchedRange

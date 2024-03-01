@@ -133,16 +133,22 @@ func (d *SorterBufferSnapDecoder) Decode(r io.Reader) ([]*pb.EventRow, error) {
 	if err := binary.Read(r, binary.LittleEndian, &startLen); err != nil {
 		return nil, err
 	}
-	start := make([]byte, startLen)
-	if _, err := io.ReadFull(r, start); err != nil {
-		return nil, err
+	var start []byte
+	if startLen > 0 {
+		start := make([]byte, startLen)
+		if _, err := io.ReadFull(r, start); err != nil {
+			return nil, err
+		}
 	}
 	if err := binary.Read(r, binary.LittleEndian, &endLen); err != nil {
 		return nil, err
 	}
-	end := make([]byte, endLen)
-	if _, err := io.ReadFull(r, end); err != nil {
-		return nil, err
+	var end []byte
+	if endLen > 0 {
+		end := make([]byte, endLen)
+		if _, err := io.ReadFull(r, end); err != nil {
+			return nil, err
+		}
 	}
 	if string(start) != string(d.Range.Start) || string(end) != string(d.Range.End) {
 		return nil, utils.ErrUnmatchedRange

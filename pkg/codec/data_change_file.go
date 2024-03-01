@@ -82,8 +82,8 @@ func (f *DataChangesFileDecoder) DecodeFrom(reader io.Reader) error {
 		if eventBatch.Rows != nil {
 			f.eventRows = append(f.eventRows, eventBatch.Rows...)
 		}
-		if eventBatch.Watermark != nil {
-			f.eventWatermarks = append(f.eventWatermarks, eventBatch.Watermark...)
+		if eventBatch.Watermarks != nil {
+			f.eventWatermarks = append(f.eventWatermarks, eventBatch.Watermarks...)
 		}
 	}
 

@@ -1,28 +1,43 @@
 package sorter
 
 import (
+	"bufio"
 	"bytes"
+	"encoding/binary"
+	"fmt"
 	"math"
 	"sync"
 
 	"github.com/huandu/skiplist"
+	"github.com/zhangjinpeng87/tistream/pkg/codec"
+	"github.com/zhangjinpeng87/tistream/pkg/storage"
 	"github.com/zhangjinpeng87/tistream/pkg/utils"
 	pb "github.com/zhangjinpeng87/tistream/proto/go/tistreampb"
 )
 
 type RangeWatermarks struct {
 	sync.RWMutex
+
+	// tenant id
+	TenantID uint64
+
+	// The range of the watermarks.
 	Range *pb.Task_Range
 
 	// range-tree organized watermarks.
 	// RangeStart -> EventWatermark
 	watermarks *skiplist.SkipList
+
+	// external storage
+	externalStorage storage.ExternalStorage
 }
 
-func NewRangeWatermarks(range_ *pb.Task_Range) *RangeWatermarks {
+func NewRangeWatermarks(tenantID uint64, range_ *pb.Task_Range, es storage.ExternalStorage) *RangeWatermarks {
 	return &RangeWatermarks{
-		Range:      range_,
-		watermarks: skiplist.New(skiplist.BytesAsc),
+		TenantID:        tenantID,
+		Range:           range_,
+		watermarks:      skiplist.New(skiplist.BytesAsc),
+		externalStorage: es,
 	}
 }
 
@@ -279,8 +294,77 @@ func (r *RangeWatermarks) RangeWatermark() uint64 {
 	return res
 }
 
-func (r *RangeWatermarks) SaveSnapTo() {
+func (r *RangeWatermarks) SaveSnapTo(rootPath string) error {
+	r.RLock()
+	defer r.RUnlock()
+
+	// Save the watermarks to the external storage.
+	encoder := codec.NewRangeWatermarksSnapEncoder(r.TenantID, r.Range)
+	var buf bytes.Buffer
+	w := bufio.NewWriter(&buf)
+
+	// collect all watermarks
+	allWatermarks := make([]*pb.EventWatermark, 0, r.watermarks.Len())
+	ele := r.watermarks.Front()
+	for ele != nil {
+		wm := ele.Value().(*pb.EventWatermark)
+		allWatermarks = append(allWatermarks, wm)
+		ele = ele.Next()
+	}
+	if err := encoder.Encode(w, allWatermarks); err != nil {
+		return err
+	}
+	w.Flush()
+
+	// append checksum
+	checksum := codec.CalcChecksum(buf.Bytes())
+	if err := binary.Write(w, binary.LittleEndian, checksum); err != nil {
+		return err
+	}
+	w.Flush()
+
+	// write to storage
+	xPath := fmt.Sprintf("%s/%d-%s-%s", rootPath, r.TenantID, r.Range.Start, r.Range.End)
+	if err := r.externalStorage.PutFile(xPath, buf.Bytes()); err != nil {
+		return err
+	}
+
+	return nil
 }
 
-func (r *RangeWatermarks) LoadSnapFrom() {
+func (r *RangeWatermarks) LoadSnapFrom(rootPath string) error {
+	// Load the watermarks from the external storage.
+	xPath := fmt.Sprintf("%s/%d-%s-%s", rootPath, r.TenantID, r.Range.Start, r.Range.End)
+	content, err := r.externalStorage.GetFile(xPath)
+	if err != nil {
+		return err
+	}
+
+	// Verify the checksum of the file.
+	fileLen := len(content)
+	if fileLen <= 4 {
+		return utils.ErrContentTooShort
+	}
+	expectedChecksum := binary.LittleEndian.Uint32(content[fileLen-4:])
+	checksum := codec.CalcChecksum(content[:fileLen-4])
+	if expectedChecksum != checksum {
+		return utils.ErrChecksumNotMatch
+	}
+
+	// Decode the file.
+	decoder := codec.NewRangeWatermarksSnapDecoder(r.TenantID, r.Range)
+	reader := bytes.NewReader(content[:fileLen-4])
+	watermarks, err := decoder.Decode(reader)
+	if err != nil {
+		return err
+	}
+
+	// Update the watermarks.
+	r.Lock()
+	defer r.Unlock()
+	for _, wm := range watermarks {
+		r.watermarks.Set(wm.RangeStart, wm)
+	}
+
+	return nil
 }

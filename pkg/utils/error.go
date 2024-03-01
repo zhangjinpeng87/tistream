@@ -5,6 +5,8 @@ import (
 )
 
 var (
+	ErrContentTooShort                       = fmt.Errorf("content too short")
+	ErrChecksumNotMatch                      = fmt.Errorf("checksum not match")
 	ErrInvalidSchemaSnapFile                 = fmt.Errorf("invalid schema snap file")
 	ErrInvalidDataChangeFile                 = fmt.Errorf("invalid data change file")
 	ErrInvalidDataChangeFileChecksum         = fmt.Errorf("invalid data change file checksum")
@@ -19,4 +21,8 @@ var (
 	ErrInvalidSorterBufferSnapFileVersion    = fmt.Errorf("invalid sorter buffer snap file version")
 	ErrInvalidPrewriteBufferSnapFileVersion  = fmt.Errorf("invalid prewrite buffer snap file version")
 	ErrInvalidRange                          = fmt.Errorf("invalid range")
+	ErrInvalidRangeWatermarksSnapFile        = fmt.Errorf("invalid range watermarks snap file")
+	ErrInvalidRangeWatermarksSnapFileVersion = fmt.Errorf("invalid range watermarks snap file version")
+	ErrInvalidRangeWatermarksSnapTenantID    = fmt.Errorf("invalid range watermarks snap tenant id")
+	ErrInvalidRangeWatermarksSnapRange       = fmt.Errorf("invalid range watermarks snap range")
 )
