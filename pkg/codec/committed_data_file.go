@@ -11,7 +11,7 @@ import (
 const (
 	// The magic number of the committed data file.
 	CommittedDataFileMagicNumber = uint32(0x30541989)
-	CommittedDataFileVersion = uint32(1)
+	CommittedDataFileVersion     = uint32(1)
 )
 
 type CommittedDataEncoder struct {

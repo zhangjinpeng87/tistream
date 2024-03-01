@@ -1,8 +1,8 @@
 package sorter
 
 import (
-	pb "github.com/zhangjinpeng87/tistream/proto/go/tistreampb"
 	"github.com/huandu/skiplist"
+	pb "github.com/zhangjinpeng87/tistream/proto/go/tistreampb"
 )
 
 // OrderedEventMap is a map with ordered keys.

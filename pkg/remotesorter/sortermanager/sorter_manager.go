@@ -9,5 +9,4 @@ import (
 
 // SorterManager is the manager of the sorter.
 type SorterManager struct {
-	
 }

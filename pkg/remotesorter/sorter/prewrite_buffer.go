@@ -94,7 +94,7 @@ func (p *PrewriteBuffer) SaveToSnap(rootPath string) error {
 
 func (p *PrewriteBuffer) LoadFromSnap(rootPath string) error {
 	// Fetch the snap file from the external storage.
-	snapName := fmt.Sprintf("%s/-%d-%s-%s.snap", rootPath, p.tenantID, p.Range.Start, p.Range.End)	
+	snapName := fmt.Sprintf("%s/-%d-%s-%s.snap", rootPath, p.tenantID, p.Range.Start, p.Range.End)
 	snapContent, err := p.externalStorage.GetFile(snapName)
 	if err != nil {
 		return err

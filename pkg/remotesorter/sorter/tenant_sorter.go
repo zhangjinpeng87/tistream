@@ -15,16 +15,14 @@ type TenantSorter struct {
 	TenantID uint64
 
 	prewriteBuffers skiplist.SkipList
-	sorterBuffers skiplist.SkipList
+	sorterBuffers   skiplist.SkipList
 }
 
 // NewTenantSorter creates a new TenantSorter.
 func NewTenantSorter(tenantID uint64) *TenantSorter {
 	return &TenantSorter{
-		TenantID: tenantID,
+		TenantID:        tenantID,
 		prewriteBuffers: skiplist.New(skiplist.StringAsc),
-		sorterBuffers: skiplist.New(skiplist.StringAsc),
+		sorterBuffers:   skiplist.New(skiplist.StringAsc),
 	}
 }
-
-

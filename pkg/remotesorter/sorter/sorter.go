@@ -25,11 +25,11 @@ type Sorter struct {
 // NewSorter creates a new Sorter.
 func NewSorter(tenantID uint64, range_ *pb.Task_Range, es storage.ExternalStorage) *Sorter {
 	return &Sorter{
-		TenantID:       tenantID,
-		Range:          range_,
+		TenantID:        tenantID,
+		Range:           range_,
 		ExternalStorage: es,
-		PrewriteBuffer: NewPrewriteBuffer(tenantID, range_, es),
-		SorterBuffer:   NewSorterBuffer(tenantID, range_, es),
+		PrewriteBuffer:  NewPrewriteBuffer(tenantID, range_, es),
+		SorterBuffer:    NewSorterBuffer(tenantID, range_, es),
 	}
 }
 
@@ -53,6 +53,5 @@ func (s *Sorter) AddEventBatch(eventBatch *pb.EventBatch) {
 	}
 
 	// Handle all watermarks in the batch.
-	
 
 }

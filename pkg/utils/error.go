@@ -18,4 +18,5 @@ var (
 	ErrInvalidPrewriteBufferSnapFileChecksum = fmt.Errorf("invalid prewrite buffer snap file checksum")
 	ErrInvalidSorterBufferSnapFileVersion    = fmt.Errorf("invalid sorter buffer snap file version")
 	ErrInvalidPrewriteBufferSnapFileVersion  = fmt.Errorf("invalid prewrite buffer snap file version")
+	ErrInvalidRange                          = fmt.Errorf("invalid range")
 )
