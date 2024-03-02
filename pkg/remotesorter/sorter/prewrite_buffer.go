@@ -63,7 +63,7 @@ func (p *PrewriteBuffer) AddEvent(eventRow *pb.EventRow) *pb.EventRow {
 	return nil
 }
 
-func (p *PrewriteBuffer) SaveToSnap(rootPath string) error {
+func (p *PrewriteBuffer) SaveSnapTo(rootPath string) error {
 	snapName := fmt.Sprintf("%s/-%d-%s-%s.snap", rootPath, p.tenantID, p.Range.Start, p.Range.End)
 	var buf bytes.Buffer
 	w := bufio.NewWriter(&buf)
@@ -92,7 +92,7 @@ func (p *PrewriteBuffer) SaveToSnap(rootPath string) error {
 	return nil
 }
 
-func (p *PrewriteBuffer) LoadFromSnap(rootPath string) error {
+func (p *PrewriteBuffer) LoadSnapFrom(rootPath string) error {
 	// Fetch the snap file from the external storage.
 	snapName := fmt.Sprintf("%s/-%d-%s-%s.snap", rootPath, p.tenantID, p.Range.Start, p.Range.End)
 	snapContent, err := p.externalStorage.GetFile(snapName)
@@ -125,4 +125,44 @@ func (p *PrewriteBuffer) LoadFromSnap(rootPath string) error {
 	}
 
 	return nil
+}
+
+func (p *PrewriteBuffer) Split(splitPoint []byte) (*PrewriteBuffer, *PrewriteBuffer) {
+	// Split the prewrite buffer.
+	leftPrewriteBuffer := NewPrewriteBuffer(p.tenantID, &pb.Task_Range{Start: p.Range.Start, End: splitPoint}, p.externalStorage)
+	rightPrewriteBuffer := NewPrewriteBuffer(p.tenantID, &pb.Task_Range{Start: splitPoint, End: p.Range.End}, p.externalStorage)
+
+	// Split the prewrites and commits.
+	for k, v := range p.prewrites {
+		if bytes.Compare([]byte(k), splitPoint) < 0 {
+			leftPrewriteBuffer.prewrites[k] = v
+		} else {
+			rightPrewriteBuffer.prewrites[k] = v
+		}
+	}
+	for k, v := range p.commitsBeforePrewrites {
+		if bytes.Compare([]byte(k), splitPoint) < 0 {
+			leftPrewriteBuffer.commitsBeforePrewrites[k] = v
+		} else {
+			rightPrewriteBuffer.commitsBeforePrewrites[k] = v
+		}
+	}
+
+	return leftPrewriteBuffer, rightPrewriteBuffer
+}
+
+func (left *PrewriteBuffer) MergeWith(right *PrewriteBuffer) {
+	if left.tenantID != right.tenantID {
+		panic("belongs to different tenants")
+	}
+	if bytes.Compare(left.Range.End, right.Range.Start) != 0 {
+		panic("ranges are not adjacent")
+	}
+
+	for k, v := range right.prewrites {
+		left.prewrites[k] = v
+	}
+	for k, v := range right.commitsBeforePrewrites {
+		left.commitsBeforePrewrites[k] = v
+	}
 }

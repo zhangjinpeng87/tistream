@@ -1,6 +1,8 @@
 package sorter
 
 import (
+	"bytes"
+
 	"github.com/huandu/skiplist"
 	pb "github.com/zhangjinpeng87/tistream/proto/go/tistreampb"
 )
@@ -8,19 +10,22 @@ import (
 // OrderedEventMap is a map with ordered keys.
 type OrderedEventMap interface {
 	// Put puts the key-value pair to the map.
-	Put(key string, value *pb.EventRow)
+	Put(key []byte, value *pb.EventRow)
 
 	// Get gets the value by the key.
-	Get(key string) *pb.EventRow
+	Get(key []byte) *pb.EventRow
 
 	// Delete deletes the key-value pair by the key.
-	Delete(key string) *pb.EventRow
+	Delete(key []byte) *pb.EventRow
 
 	// GetRange gets the key-value pairs by the range.
-	GetRange(start, end string) []*pb.EventRow
+	GetRange(start, end []byte) []*pb.EventRow
 
 	// DelRange deletes the key-value pairs by the range.
-	DelRange(start, end string)
+	DelRange(start, end []byte)
+
+	// IterateRange iterates the key-value pairs by the range.
+	IterateRange(start, end []byte, f func(key []byte, value *pb.EventRow) bool)
 
 	// Reset resets the map.
 	Reset()
@@ -34,17 +39,17 @@ type SkipListEventMap struct {
 // NewSkipListEventMap creates a new SkipListEventMap.
 func NewSkipListEventMap() *SkipListEventMap {
 	return &SkipListEventMap{
-		list: skiplist.New(skiplist.StringAsc),
+		list: skiplist.New(skiplist.BytesAsc),
 	}
 }
 
 // Put puts the key-value pair to the map.
-func (m *SkipListEventMap) Put(key string, value *pb.EventRow) {
+func (m *SkipListEventMap) Put(key []byte, value *pb.EventRow) {
 	m.list.Set(key, value)
 }
 
 // Get gets the value by the key.
-func (m *SkipListEventMap) Get(key string) *pb.EventRow {
+func (m *SkipListEventMap) Get(key []byte) *pb.EventRow {
 	v := m.list.Get(key)
 	if v == nil {
 		return nil
@@ -53,7 +58,7 @@ func (m *SkipListEventMap) Get(key string) *pb.EventRow {
 }
 
 // Delete deletes the key-value pair by the key.
-func (m *SkipListEventMap) Delete(key string) *pb.EventRow {
+func (m *SkipListEventMap) Delete(key []byte) *pb.EventRow {
 	e := m.list.Remove(key)
 	if e == nil {
 		return nil
@@ -62,11 +67,11 @@ func (m *SkipListEventMap) Delete(key string) *pb.EventRow {
 }
 
 // GetRange gets the key-value pairs by the range.
-func (m *SkipListEventMap) GetRange(start, end string) []*pb.EventRow {
+func (m *SkipListEventMap) GetRange(start, end []byte) []*pb.EventRow {
 	var res []*pb.EventRow
 	e := m.list.Find(start)
 	for e != nil {
-		if e.Key().(string) >= end {
+		if bytes.Compare(e.Key().([]byte), end) >= 0 {
 			break
 		}
 		res = append(res, e.Value.(*pb.EventRow))
@@ -76,23 +81,36 @@ func (m *SkipListEventMap) GetRange(start, end string) []*pb.EventRow {
 }
 
 // DelRange deletes the key-value pairs by the range.
-func (m *SkipListEventMap) DelRange(start, end string) {
+func (m *SkipListEventMap) DelRange(start, end []byte) {
 	e := m.list.Find(start)
 	for e != nil {
-		if e.Key().(string) >= end {
+		if bytes.Compare(e.Key().([]byte), end) >= 0 {
 			break
 		}
-		m.list.Remove(e.Key().(string))
+		m.list.Remove(e.Key().([]byte))
+		e = e.Next()
+	}
+}
+
+// IterateRange iterates the key-value pairs by the range.
+func (m *SkipListEventMap) IterateRange(start, end []byte, f func(key []byte, value *pb.EventRow) bool) {
+	e := m.list.Find(start)
+	for e != nil {
+		if bytes.Compare(e.Key().([]byte), end) >= 0 {
+			break
+		}
+		if !f(e.Key().([]byte), e.Value.(*pb.EventRow)) {
+			break
+		}
 		e = e.Next()
 	}
 }
 
 // Reset resets the map.
 func (m *SkipListEventMap) Reset() {
-	m.list = skiplist.New(skiplist.StringAsc)
+	m.list = skiplist.New(skiplist.BytesAsc)
 }
 
-// LSMTreeEventMap is the LSM tree based ordered event map.
-type LSMTreeEventMap struct {
-	// Todo: implement the LSM tree based ordered event map.
+type DiskBasedOrderMap struct {
+	// Todo: implement the disk based ordered event map.
 }

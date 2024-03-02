@@ -259,7 +259,7 @@ func (r *RangeWatermarks) getOrderedOverlaps(wm *pb.EventWatermark) []*pb.EventW
 	}
 }
 
-func (r *RangeWatermarks) RangeWatermark() uint64 {
+func (r *RangeWatermarks) LatestWatermark() uint64 {
 	r.RLock()
 	defer r.RUnlock()
 
@@ -367,4 +367,81 @@ func (r *RangeWatermarks) LoadSnapFrom(rootPath string) error {
 	}
 
 	return nil
+}
+
+func (r *RangeWatermarks) Split(splitPoint []byte) (*RangeWatermarks, *RangeWatermarks) {
+	r.Lock()
+	defer r.Unlock()
+
+	// Split the watermarks.
+	left := skiplist.New(skiplist.BytesAsc)
+	right := skiplist.New(skiplist.BytesAsc)
+
+	ele := r.watermarks.Front()
+	for ele != nil {
+		wm := ele.Value().(*pb.EventWatermark)
+		if bytes.Compare(wm.RangeStart, splitPoint) < 0 {
+			if bytes.Compare(wm.RangeEnd, splitPoint) > 0 {
+				// The watermark cross the split point, split the watermark.
+				left.Set(wm.RangeStart, &pb.EventWatermark{
+					RangeId:      wm.RangeId,
+					RangeVersion: wm.RangeVersion,
+					RangeStart:   wm.RangeStart,
+					RangeEnd:     splitPoint,
+					Ts:           wm.Ts,
+				})
+				right.Set(splitPoint, &pb.EventWatermark{
+					RangeId:      wm.RangeId,
+					RangeVersion: wm.RangeVersion,
+					RangeStart:   splitPoint,
+					RangeEnd:     wm.RangeEnd,
+					Ts:           wm.Ts,
+				})
+			} else {
+				left.Set(wm.RangeStart, wm)
+			}
+		} else {
+			right.Set(wm.RangeStart, wm)
+		}
+
+		ele = ele.Next()
+	}
+
+	leftWatermarks := &RangeWatermarks{
+		TenantID:        r.TenantID,
+		Range:           &pb.Task_Range{Start: r.Range.Start, End: splitPoint},
+		watermarks:      left,
+		externalStorage: r.externalStorage,
+	}
+	rightWatermarks := &RangeWatermarks{
+		TenantID:        r.TenantID,
+		Range:           &pb.Task_Range{Start: splitPoint, End: r.Range.End},
+		watermarks:      right,
+		externalStorage: r.externalStorage,
+	}
+
+	return leftWatermarks, rightWatermarks
+}
+
+func (left *RangeWatermarks) MergeWith(right *RangeWatermarks) {
+	// Tow ranges should be continuous.
+	if bytes.Compare(left.Range.End, right.Range.Start) != 0 {
+		panic("invalid ranges")
+	}
+
+	left.Lock()
+	defer left.Unlock()
+	right.Lock()
+	defer right.Unlock()
+
+	// Merge the watermarks.
+	ele := right.watermarks.Front()
+	for ele != nil {
+		wm := ele.Value().(*pb.EventWatermark)
+		left.watermarks.Set(wm.RangeStart, wm)
+		ele = ele.Next()
+	}
+
+	// Update the range.
+	left.Range.End = right.Range.End
 }
