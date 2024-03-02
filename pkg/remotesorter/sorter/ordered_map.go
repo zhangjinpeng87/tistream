@@ -114,3 +114,9 @@ func (m *SkipListEventMap) Reset() {
 type DiskBasedOrderMap struct {
 	// Todo: implement the disk based ordered event map.
 }
+
+type SkiplistFactory struct{}
+
+func (f *SkiplistFactory) Create() OrderedEventMap {
+	return NewSkipListEventMap()
+}

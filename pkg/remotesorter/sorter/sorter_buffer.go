@@ -29,14 +29,16 @@ type SorterBuffer struct {
 	mapFactory OrderedMapFactory
 }
 
-type OrderedMapFactory func() OrderedEventMap
+type OrderedMapFactory interface {
+	Create() OrderedEventMap
+}
 
 // NewSorterBuffer creates a new SorterBuffer.
 func NewSorterBuffer(tenantID uint64, range_ *pb.Task_Range, s storage.ExternalStorage, f OrderedMapFactory) *SorterBuffer {
 	return &SorterBuffer{
 		tenantID:        tenantID,
 		Range:           range_,
-		orderedEventMap: f(),
+		orderedEventMap: f.Create(),
 		externalStorage: s,
 		mapFactory:      f,
 	}
@@ -144,8 +146,8 @@ func (s *SorterBuffer) LoadSnapFrom(path string) error {
 
 func (s *SorterBuffer) Split(splitPoint []byte) (*SorterBuffer, *SorterBuffer) {
 	// Split the ordered event map.
-	left := s.mapFactory()
-	right := s.mapFactory()
+	left := s.mapFactory.Create()
+	right := s.mapFactory.Create()
 	s.orderedEventMap.IterateRange([]byte(fmt.Sprintf("%020d-", uint64(0))), []byte(fmt.Sprintf("%020d-", binary.BigEndian.Uint64(splitPoint))),
 		func(key []byte, value *pb.EventRow) bool {
 			if bytes.Compare(value.Key, splitPoint) < 0 {

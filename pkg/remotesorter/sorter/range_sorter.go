@@ -36,7 +36,7 @@ func NewRangeSorter(tenantID uint64, range_ *pb.Task_Range, es storage.ExternalS
 		Range:           range_,
 		ExternalStorage: es,
 		prewriteBuffer:  NewPrewriteBuffer(tenantID, range_, es),
-		sorterBuffer:    NewSorterBuffer(tenantID, range_, es),
+		sorterBuffer:    NewSorterBuffer(tenantID, range_, es, &SkiplistFactory{}),
 		rangeWatermarks: NewRangeWatermarks(tenantID, range_, es),
 	}
 }

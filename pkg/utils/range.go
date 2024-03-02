@@ -7,8 +7,8 @@ import (
 )
 
 func RangeOverlapped(r1 *pb.Task_Range, r2 *pb.Task_Range) bool {
-	if bytes.Compare(r1.End, r2.Start) <= 0 || bytes.Compare(r2.End, r1.Start) <= 0 {
-		return false
+	if bytes.Compare(r1.Start, r2.End) < 0 && bytes.Compare(r2.Start, r1.End) < 0 {
+		return true
 	}
-	return true
+	return false
 }
