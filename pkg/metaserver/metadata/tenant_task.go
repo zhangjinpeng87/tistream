@@ -10,11 +10,11 @@ import (
 type TenantTasks struct {
 	sync.RWMutex
 
-	tenantId uint32
+	tenantId uint64
 	tasks    *skiplist.SkipList
 }
 
-func NewTenantTasks(tenantId uint32) *TenantTasks {
+func NewTenantTasks(tenantId uint64) *TenantTasks {
 	return &TenantTasks{
 		tenantId: tenantId,
 		tasks:    skiplist.New(skiplist.BytesAsc),

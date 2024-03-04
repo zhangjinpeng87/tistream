@@ -5,20 +5,21 @@ import (
 	"sync/atomic"
 
 	"github.com/zhangjinpeng87/tistream/pkg/utils"
+	pb "github.com/zhangjinpeng87/tistream/proto/go/tistreampb"
 )
 
 type TaskManagement struct {
 	sync.RWMutex
 
 	// tenantId -> Tasks
-	tasks       map[uint32]*TenantTasks
+	tasks       map[uint64]*TenantTasks
 	backend     *Backend
 	dataIsReady atomic.Bool
 }
 
 func NewTaskManagement(config *utils.MetaServerConfig, backend *Backend) *TaskManagement {
 	return &TaskManagement{
-		tasks:   make(map[uint32]*TenantTasks),
+		tasks:   make(map[uint64]*TenantTasks),
 		backend: backend,
 	}
 }
@@ -41,19 +42,19 @@ func (t *TaskManagement) SetReady(b bool) {
 func (t *TaskManagement) LoadAllTasks() error {
 	// Clean up the tasks.
 	t.Lock()
-	t.tasks = make(map[uint32]*TenantTasks)
+	t.tasks = make(map[uint64]*TenantTasks)
 	t.Unlock()
 
 	// Load all tasks from the backend.
-	t.backend.LoadAllTasks(func(tenantId uint32, task *TenantTask) {
-		t.AddTask(tenantId, *task)
+	t.backend.LoadAllTasks(func(tenantId uint64, task *pb.Task) {
+		t.AddTask(tenantId, task)
 	})
 
 	t.SetReady(true)
 	return nil
 }
 
-func (t *TaskManagement) AddTask(tenantId uint32, task TenantTask) {
+func (t *TaskManagement) AddTask(tenantId uint64, task *pb.Task) {
 	t.Lock()
 	defer t.Unlock()
 
@@ -66,23 +67,23 @@ func (t *TaskManagement) AddTask(tenantId uint32, task TenantTask) {
 	}
 }
 
-func (t *TaskManagement) RemoveTask(tenantId uint32, rangeStart RangeStart) {
+func (t *TaskManagement) RemoveTask(tenantId uint64, task *pb.Task) {
 	t.Lock()
 	defer t.Unlock()
 
 	if tasks, ok := t.tasks[tenantId]; ok {
-		tasks.RemoveTask(rangeStart)
+		tasks.RemoveTask(task)
 	}
 }
 
-func (t *TaskManagement) RemoveTenant(tenantId uint32) {
+func (t *TaskManagement) RemoveTenant(tenantId uint64) {
 	t.Lock()
 	defer t.Unlock()
 
 	delete(t.tasks, tenantId)
 }
 
-func (t *TaskManagement) GetTask(tenantId uint32, rangeStart RangeStart) *TenantTask {
+func (t *TaskManagement) GetTask(tenantId uint64, rangeStart []byte) *pb.Task {
 	t.RLock()
 	defer t.RUnlock()
 

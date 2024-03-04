@@ -61,7 +61,7 @@ func (b *Backend) BootstrapSchema() error {
 	// 	  tenant_id int(10), // Task belongs to which tenant. Typically there is just one task for each tenant, there might be multiple tasks if the tenant is large.
 	// 	  range_start varchar(255), // Start key of this continuous range
 	// 	  range_end varchar(255),
-	// 	  sorter int(10), Which sorter is responsible for this task
+	// 	  sorter_addr varchar(255), Which sorter is responsible for this task
 	// 	  snapshot_addr varchar(255), // Where to store the task snapshot
 	//    unique (tenant_id, range_start), // There should be only one task for each tenant and range
 	// }
@@ -70,7 +70,7 @@ func (b *Backend) BootstrapSchema() error {
 		"tenant_id INT," +
 		"range_start VARCHAR(255)," +
 		"range_end VARCHAR(255)," +
-		"sorter INT," +
+		"sorter_addr VARCHAR(255)," +
 		"snapshot_addr VARCHAR(255)," +
 		"created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, " +
 		"updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP)," +
@@ -147,9 +147,9 @@ func (b *Backend) TryCampaignMaster(who string, leaseDurSec int) (bool, error) {
 
 // Add a new task to backend.
 // Return error if the task already exists. TenantID and RangeStart are unique to indicate a task.
-func (b *Backend) AddTask(task *TenantTask) error {
+func (b *Backend) AddTask(task *pb.Task) error {
 	res, err := b.db.Exec("INSERT INTO tistream.tasks (tenant_id, range_start, range_end, sorter, snapshot_addr) VALUES (?, ?, ?, ?, ?, ?)",
-		task.InternalTask.TenantId, string(task.InternalTask.RangeStart), string(task.InternalTask.RangeEnd), task.InternalTask.SorterId, task.InternalTask.SnapAddr)
+		task.TenantId, string(task.Range.Start), string(task.Range.End), task.SorterAddr, task.SnapAddr)
 	if err != nil {
 		return fmt.Errorf("failed to insert task: %v", err)
 	}
@@ -180,9 +180,9 @@ func (b *Backend) RemoveTask(tenantID uint32, rangeStart []byte) (bool, error) {
 
 // Modify a task in backend.
 // Return true if the task is modified, false if the task doesn't exist.
-func (b *Backend) ModifyTask(task *TenantTask) (bool, error) {
+func (b *Backend) ModifyTask(task *pb.Task) (bool, error) {
 	res, err := b.db.Exec("UPDATE tistream.tasks SET sorter = ?, snapshot_addr = ?, range_end = ? WHERE tenant_id = ? AND range_start = ?",
-		task.InternalTask.SorterId, task.InternalTask.SnapAddr, task.InternalTask.RangeEnd, task.InternalTask.TenantId, string(task.InternalTask.RangeStart))
+		task.SorterAddr, task.SnapAddr, task.Range.End, task.TenantId, string(task.Range.Start))
 	if err != nil {
 		return false, fmt.Errorf("failed to modify task: %v", err)
 	}
@@ -198,34 +198,28 @@ func (b *Backend) ModifyTask(task *TenantTask) (bool, error) {
 }
 
 // LoadAllTasks loads all tasks from backend.
-func (b *Backend) LoadAllTasks(f func(t uint32, task *TenantTask)) error {
-	rows, err := b.db.Query("SELECT * FROM tistream.tasks")
+func (b *Backend) LoadAllTasks(f func(t uint64, task *pb.Task)) error {
+	rows, err := b.db.Query("SELECT id, tenant_id, range_start, range_end, sorter_addr, snapshot_addr FROM tistream.tasks")
 	if err != nil {
 		return fmt.Errorf("failed to query tasks: %v", err)
 	}
 	defer rows.Close()
 
 	for rows.Next() {
-		var id, tenantID, sorter uint32
-		var rangeStart, rangeEnd, snapshotAddr string
-		if err := rows.Scan(&id, &tenantID, &rangeStart, &rangeEnd, &sorter, &snapshotAddr); err != nil {
+		var id, tenantID uint64
+		var rangeStart, rangeEnd, snapshotAddr, sorterAddr string
+		if err := rows.Scan(&id, &tenantID, &rangeStart, &rangeEnd, &sorterAddr, &snapshotAddr); err != nil {
 			return fmt.Errorf("failed to scan tasks: %v", err)
 		}
 
 		pbTask := &pb.Task{
 			TenantId:   tenantID,
-			RangeStart: []byte(rangeStart),
-			RangeEnd:   []byte(rangeEnd),
-			SorterId:   sorter,
+			Range:      &pb.Task_Range{Start: []byte(rangeStart), End: []byte(rangeEnd)},
+			SorterAddr: sorterAddr,
 			SnapAddr:   snapshotAddr,
 		}
 
-		task := &TenantTask{
-			RangeStart:   []byte(rangeStart),
-			InternalTask: pbTask,
-		}
-
-		f(tenantID, task)
+		f(tenantID, pbTask)
 	}
 
 	return nil
