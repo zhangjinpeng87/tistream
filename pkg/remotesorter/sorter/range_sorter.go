@@ -3,6 +3,8 @@ package sorter
 import (
 	"bytes"
 	"fmt"
+	"sync"
+	"time"
 
 	"github.com/zhangjinpeng87/tistream/pkg/storage"
 	pb "github.com/zhangjinpeng87/tistream/proto/go/tistreampb"
@@ -10,6 +12,9 @@ import (
 
 // RangeSorter is the sorter for a specified range of a specified tenant.
 type RangeSorter struct {
+	// Mutex to protect the meta of sorter.
+	sync.Mutex
+
 	// The tenant id.
 	TenantID uint64
 	// Range of the sorter
@@ -27,17 +32,24 @@ type RangeSorter struct {
 
 	// Last checkpoint of the sorter.
 	lastCheckpoint uint64
+	// Last snapshot time of the sorter.
+	lastSnapshotTime time.Time
+	// Last update time of the sorter.
+	// Monotonic time
+	lastUpdateTime time.Time
 }
 
 // NewRangeSorter creates a new RangeSorter.
 func NewRangeSorter(tenantID uint64, range_ *pb.Task_Range, es storage.ExternalStorage) *RangeSorter {
 	return &RangeSorter{
-		TenantID:        tenantID,
-		Range:           range_,
-		ExternalStorage: es,
-		prewriteBuffer:  NewPrewriteBuffer(tenantID, range_, es),
-		sorterBuffer:    NewSorterBuffer(tenantID, range_, es, &SkiplistFactory{}),
-		rangeWatermarks: NewRangeWatermarks(tenantID, range_, es),
+		TenantID:         tenantID,
+		Range:            range_,
+		ExternalStorage:  es,
+		prewriteBuffer:   NewPrewriteBuffer(tenantID, range_, es),
+		sorterBuffer:     NewSorterBuffer(tenantID, range_, es, &SkiplistFactory{}),
+		rangeWatermarks:  NewRangeWatermarks(tenantID, range_, es),
+		lastSnapshotTime: time.Now(),
+		lastUpdateTime:   time.Now(),
 	}
 }
 
@@ -65,10 +77,25 @@ func (s *RangeSorter) AddEventBatch(eventBatch *pb.EventBatch) error {
 		}
 	}
 
+	// Update last update time.
+	s.Lock()
+	defer s.Unlock()
+	s.lastUpdateTime = time.Now()
+
 	return nil
 }
 
+func (s *RangeSorter) skipSnapshot() bool {
+	s.Lock()
+	defer s.Unlock()
+	return s.lastSnapshotTime.After(s.lastUpdateTime)
+}
+
 func (s *RangeSorter) SaveSnapshot() error {
+	if s.skipSnapshot() {
+		return nil
+	}
+
 	if err := s.prewriteBuffer.SaveSnapTo(fmt.Sprintf("%s-prewritebuffer", s.rootPath)); err != nil {
 		return err
 	}
@@ -78,6 +105,11 @@ func (s *RangeSorter) SaveSnapshot() error {
 	if err := s.rangeWatermarks.SaveSnapTo(fmt.Sprintf("%s-watermarks", s.rootPath)); err != nil {
 		return err
 	}
+
+	s.Lock()
+	defer s.Unlock()
+	s.lastSnapshotTime = time.Now()
+
 	return nil
 }
 
@@ -95,16 +127,27 @@ func (s *RangeSorter) LoadSnapshot() error {
 }
 
 func (s *RangeSorter) FlushCommittedData() error {
+	// Flush the committed data in the sorter buffer.
 	latestWatermark := s.rangeWatermarks.LatestWatermark()
 	if err := s.sorterBuffer.FlushCommittedData(s.lastCheckpoint, latestWatermark, s.rootPath); err != nil {
 		return err
 	}
-	s.sorterBuffer.CleanData(s.lastCheckpoint, latestWatermark)
+
+	// Update the last checkpoint.
+	s.Lock()
 	s.lastCheckpoint = latestWatermark
+	s.Unlock()
+
+	// Clean the sorter buffer.
+	s.sorterBuffer.CleanData(s.lastCheckpoint, latestWatermark)
+
 	return nil
 }
 
 func (s *RangeSorter) Split(splitPoint []byte) (*RangeSorter, *RangeSorter) {
+	s.Lock()
+	defer s.Unlock()
+
 	// Split the prewrite buffer.
 	leftPrewriteBuffer, rightPrewriteBuffer := s.prewriteBuffer.Split(splitPoint)
 
@@ -137,6 +180,9 @@ func (s *RangeSorter) Split(splitPoint []byte) (*RangeSorter, *RangeSorter) {
 }
 
 func (left *RangeSorter) MergeWith(right *RangeSorter) {
+	left.Lock()
+	defer left.Unlock()
+
 	if left.TenantID != right.TenantID {
 		panic("the ranges are not belongs to the same tenant")
 	}

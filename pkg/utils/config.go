@@ -41,8 +41,9 @@ type DispatcherConfig struct {
 }
 
 type SorterConfig struct {
-	Addr string
-	Port int
+	Addr    string
+	Port    int
+	Storage StorageConfig
 }
 
 type MetaServerConfig struct {
