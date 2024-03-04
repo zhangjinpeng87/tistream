@@ -52,7 +52,6 @@ func (s *SorterBuffer) AddEvent(eventRow *pb.EventRow) {
 func (s *SorterBuffer) FlushCommittedData(lowWatermark, highWatermark uint64, path string) error {
 	events := s.orderedEventMap.GetRange([]byte(fmt.Sprintf("%020d-", lowWatermark)), []byte(fmt.Sprintf("%020d-", highWatermark)))
 	if len(events) > 0 {
-
 		encoder := codec.NewCommittedDataEncoder(s.tenantID, s.Range, lowWatermark, highWatermark)
 		var buf bytes.Buffer
 		w := bufio.NewWriter(&buf)

@@ -25,4 +25,6 @@ var (
 	ErrInvalidRangeWatermarksSnapFileVersion = fmt.Errorf("invalid range watermarks snap file version")
 	ErrInvalidRangeWatermarksSnapTenantID    = fmt.Errorf("invalid range watermarks snap tenant id")
 	ErrInvalidRangeWatermarksSnapRange       = fmt.Errorf("invalid range watermarks snap range")
+	ErrInvalidCommittedDataFile              = fmt.Errorf("invalid committed data file")
+	ErrInvalidCommittedDataFileVersion       = fmt.Errorf("invalid committed data file version")
 )
