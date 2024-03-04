@@ -71,3 +71,14 @@ enum TaskOp {
     Attach = 0;
     Detach = 1;
 }
+
+message PullTenantDataReq {
+    uint64 tenant_id = 1;
+    Task.Range range = 2;
+    uint64 low_watermark = 3;
+    uint64 high_watermark = 4;
+}
+
+message PullTenantDataResp {
+    repeated EventRow rows = 1;
+}

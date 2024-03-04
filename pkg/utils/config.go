@@ -62,8 +62,9 @@ type MetaServerConfig struct {
 }
 
 type ApiServerConfig struct {
-	Addr string
-	Port int
+	Addr    string
+	Port    int
+	Storage StorageConfig
 }
 
 type SchemaRegistryConfig struct {
