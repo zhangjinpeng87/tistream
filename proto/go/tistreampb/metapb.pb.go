@@ -808,6 +808,70 @@ func (x *PullTenantDataResp) GetRows() []*EventRow {
 	return nil
 }
 
+// Snapshot of all ranges for a tenant at a specified timestamp.
+type RangesSnapshot struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	TenantId uint64        `protobuf:"varint,1,opt,name=tenant_id,json=tenantId,proto3" json:"tenant_id,omitempty"`
+	Ts       uint64        `protobuf:"varint,2,opt,name=ts,proto3" json:"ts,omitempty"`
+	Ranges   []*Task_Range `protobuf:"bytes,3,rep,name=ranges,proto3" json:"ranges,omitempty"`
+}
+
+func (x *RangesSnapshot) Reset() {
+	*x = RangesSnapshot{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_metapb_proto_msgTypes[14]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *RangesSnapshot) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RangesSnapshot) ProtoMessage() {}
+
+func (x *RangesSnapshot) ProtoReflect() protoreflect.Message {
+	mi := &file_metapb_proto_msgTypes[14]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use RangesSnapshot.ProtoReflect.Descriptor instead.
+func (*RangesSnapshot) Descriptor() ([]byte, []int) {
+	return file_metapb_proto_rawDescGZIP(), []int{14}
+}
+
+func (x *RangesSnapshot) GetTenantId() uint64 {
+	if x != nil {
+		return x.TenantId
+	}
+	return 0
+}
+
+func (x *RangesSnapshot) GetTs() uint64 {
+	if x != nil {
+		return x.Ts
+	}
+	return 0
+}
+
+func (x *RangesSnapshot) GetRanges() []*Task_Range {
+	if x != nil {
+		return x.Ranges
+	}
+	return nil
+}
+
 type Task_Range struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -820,7 +884,7 @@ type Task_Range struct {
 func (x *Task_Range) Reset() {
 	*x = Task_Range{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_metapb_proto_msgTypes[14]
+		mi := &file_metapb_proto_msgTypes[15]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -833,7 +897,7 @@ func (x *Task_Range) String() string {
 func (*Task_Range) ProtoMessage() {}
 
 func (x *Task_Range) ProtoReflect() protoreflect.Message {
-	mi := &file_metapb_proto_msgTypes[14]
+	mi := &file_metapb_proto_msgTypes[15]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -948,10 +1012,17 @@ var file_metapb_proto_rawDesc = []byte{
 	0x0a, 0x12, 0x50, 0x75, 0x6c, 0x6c, 0x54, 0x65, 0x6e, 0x61, 0x6e, 0x74, 0x44, 0x61, 0x74, 0x61,
 	0x52, 0x65, 0x73, 0x70, 0x12, 0x28, 0x0a, 0x04, 0x72, 0x6f, 0x77, 0x73, 0x18, 0x01, 0x20, 0x03,
 	0x28, 0x0b, 0x32, 0x14, 0x2e, 0x74, 0x69, 0x73, 0x74, 0x72, 0x65, 0x61, 0x6d, 0x70, 0x62, 0x2e,
-	0x45, 0x76, 0x65, 0x6e, 0x74, 0x52, 0x6f, 0x77, 0x52, 0x04, 0x72, 0x6f, 0x77, 0x73, 0x2a, 0x20,
-	0x0a, 0x06, 0x54, 0x61, 0x73, 0x6b, 0x4f, 0x70, 0x12, 0x0a, 0x0a, 0x06, 0x41, 0x74, 0x74, 0x61,
-	0x63, 0x68, 0x10, 0x00, 0x12, 0x0a, 0x0a, 0x06, 0x44, 0x65, 0x74, 0x61, 0x63, 0x68, 0x10, 0x01,
-	0x42, 0x04, 0x5a, 0x02, 0x2e, 0x2f, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
+	0x45, 0x76, 0x65, 0x6e, 0x74, 0x52, 0x6f, 0x77, 0x52, 0x04, 0x72, 0x6f, 0x77, 0x73, 0x22, 0x6d,
+	0x0a, 0x0e, 0x52, 0x61, 0x6e, 0x67, 0x65, 0x73, 0x53, 0x6e, 0x61, 0x70, 0x73, 0x68, 0x6f, 0x74,
+	0x12, 0x1b, 0x0a, 0x09, 0x74, 0x65, 0x6e, 0x61, 0x6e, 0x74, 0x5f, 0x69, 0x64, 0x18, 0x01, 0x20,
+	0x01, 0x28, 0x04, 0x52, 0x08, 0x74, 0x65, 0x6e, 0x61, 0x6e, 0x74, 0x49, 0x64, 0x12, 0x0e, 0x0a,
+	0x02, 0x74, 0x73, 0x18, 0x02, 0x20, 0x01, 0x28, 0x04, 0x52, 0x02, 0x74, 0x73, 0x12, 0x2e, 0x0a,
+	0x06, 0x72, 0x61, 0x6e, 0x67, 0x65, 0x73, 0x18, 0x03, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x16, 0x2e,
+	0x74, 0x69, 0x73, 0x74, 0x72, 0x65, 0x61, 0x6d, 0x70, 0x62, 0x2e, 0x54, 0x61, 0x73, 0x6b, 0x2e,
+	0x52, 0x61, 0x6e, 0x67, 0x65, 0x52, 0x06, 0x72, 0x61, 0x6e, 0x67, 0x65, 0x73, 0x2a, 0x20, 0x0a,
+	0x06, 0x54, 0x61, 0x73, 0x6b, 0x4f, 0x70, 0x12, 0x0a, 0x0a, 0x06, 0x41, 0x74, 0x74, 0x61, 0x63,
+	0x68, 0x10, 0x00, 0x12, 0x0a, 0x0a, 0x06, 0x44, 0x65, 0x74, 0x61, 0x63, 0x68, 0x10, 0x01, 0x42,
+	0x04, 0x5a, 0x02, 0x2e, 0x2f, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
 }
 
 var (
@@ -967,7 +1038,7 @@ func file_metapb_proto_rawDescGZIP() []byte {
 }
 
 var file_metapb_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_metapb_proto_msgTypes = make([]protoimpl.MessageInfo, 15)
+var file_metapb_proto_msgTypes = make([]protoimpl.MessageInfo, 16)
 var file_metapb_proto_goTypes = []interface{}{
 	(TaskOp)(0),                     // 0: tistreampb.TaskOp
 	(*HasNewChangeReq)(nil),         // 1: tistreampb.HasNewChangeReq
@@ -984,27 +1055,29 @@ var file_metapb_proto_goTypes = []interface{}{
 	(*TenantTasksResp)(nil),         // 12: tistreampb.TenantTasksResp
 	(*PullTenantDataReq)(nil),       // 13: tistreampb.PullTenantDataReq
 	(*PullTenantDataResp)(nil),      // 14: tistreampb.PullTenantDataResp
-	(*Task_Range)(nil),              // 15: tistreampb.Task.Range
-	(*EventRow)(nil),                // 16: tistreampb.EventRow
-	(*EventWatermark)(nil),          // 17: tistreampb.EventWatermark
+	(*RangesSnapshot)(nil),          // 15: tistreampb.RangesSnapshot
+	(*Task_Range)(nil),              // 16: tistreampb.Task.Range
+	(*EventRow)(nil),                // 17: tistreampb.EventRow
+	(*EventWatermark)(nil),          // 18: tistreampb.EventWatermark
 }
 var file_metapb_proto_depIdxs = []int32{
 	10, // 0: tistreampb.DispatcherHeartbeatReq.tenant_stats:type_name -> tistreampb.TenantSubStats
 	10, // 1: tistreampb.SorterHeartbeatReq.tenant_stats:type_name -> tistreampb.TenantSubStats
-	15, // 2: tistreampb.Task.range:type_name -> tistreampb.Task.Range
-	15, // 3: tistreampb.RangeChangesReq.range:type_name -> tistreampb.Task.Range
-	16, // 4: tistreampb.RangeChangesReq.rows:type_name -> tistreampb.EventRow
-	17, // 5: tistreampb.RangeChangesReq.watermarks:type_name -> tistreampb.EventWatermark
-	15, // 6: tistreampb.TenantSubStats.range:type_name -> tistreampb.Task.Range
+	16, // 2: tistreampb.Task.range:type_name -> tistreampb.Task.Range
+	16, // 3: tistreampb.RangeChangesReq.range:type_name -> tistreampb.Task.Range
+	17, // 4: tistreampb.RangeChangesReq.rows:type_name -> tistreampb.EventRow
+	18, // 5: tistreampb.RangeChangesReq.watermarks:type_name -> tistreampb.EventWatermark
+	16, // 6: tistreampb.TenantSubStats.range:type_name -> tistreampb.Task.Range
 	7,  // 7: tistreampb.TenantTasksReq.tasks:type_name -> tistreampb.Task
 	0,  // 8: tistreampb.TenantTasksReq.op:type_name -> tistreampb.TaskOp
-	15, // 9: tistreampb.PullTenantDataReq.range:type_name -> tistreampb.Task.Range
-	16, // 10: tistreampb.PullTenantDataResp.rows:type_name -> tistreampb.EventRow
-	11, // [11:11] is the sub-list for method output_type
-	11, // [11:11] is the sub-list for method input_type
-	11, // [11:11] is the sub-list for extension type_name
-	11, // [11:11] is the sub-list for extension extendee
-	0,  // [0:11] is the sub-list for field type_name
+	16, // 9: tistreampb.PullTenantDataReq.range:type_name -> tistreampb.Task.Range
+	17, // 10: tistreampb.PullTenantDataResp.rows:type_name -> tistreampb.EventRow
+	16, // 11: tistreampb.RangesSnapshot.ranges:type_name -> tistreampb.Task.Range
+	12, // [12:12] is the sub-list for method output_type
+	12, // [12:12] is the sub-list for method input_type
+	12, // [12:12] is the sub-list for extension type_name
+	12, // [12:12] is the sub-list for extension extendee
+	0,  // [0:12] is the sub-list for field type_name
 }
 
 func init() { file_metapb_proto_init() }
@@ -1183,6 +1256,18 @@ func file_metapb_proto_init() {
 			}
 		}
 		file_metapb_proto_msgTypes[14].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*RangesSnapshot); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_metapb_proto_msgTypes[15].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*Task_Range); i {
 			case 0:
 				return &v.state
@@ -1201,7 +1286,7 @@ func file_metapb_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_metapb_proto_rawDesc,
 			NumEnums:      1,
-			NumMessages:   15,
+			NumMessages:   16,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

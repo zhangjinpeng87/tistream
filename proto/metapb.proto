@@ -82,3 +82,10 @@ message PullTenantDataReq {
 message PullTenantDataResp {
     repeated EventRow rows = 1;
 }
+
+// Snapshot of all ranges for a tenant at a specified timestamp.
+message RangesSnapshot {
+    uint64 tenant_id = 1;
+    uint64 ts = 2;
+    repeated Task.Range ranges = 3;
+}
