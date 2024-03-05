@@ -85,13 +85,16 @@ func (m *TenantDataMap) GetRangeFiles(range_ *pb.Task_Range, lowWatermark uint64
 	return res
 }
 
-// TimeSliceRangeFiles is RangeFiles for a specific time slice.
+// TimeSliceRangeFiles is RangeFiles for a specific time slice like ts100~200.
 type TimeSliceRangeFiles struct {
 	// Time slice of the data files.
 	HighWatermark uint64
 	LowWatermark  uint64
 
 	// Different Ranges -> Ordered Files
+	// | 	Range1       |       Range2       |       Range3       |
+	// |-----------------|--------------------|--------------------|
+	// | file1, file2... | file1, file2, ...  | file1, file2, ...  |
 	rangeFiles skiplist.SkipList
 }
 
