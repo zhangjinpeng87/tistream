@@ -28,4 +28,5 @@ var (
 	ErrInvalidCommittedDataFile              = fmt.Errorf("invalid committed data file")
 	ErrInvalidCommittedDataFileVersion       = fmt.Errorf("invalid committed data file version")
 	ErrInvalidCommittedManifestFile          = fmt.Errorf("invalid committed manifest file")
+	ErrInvalidCommittedRangeIndexFile        = fmt.Errorf("invalid committed range index file")
 )

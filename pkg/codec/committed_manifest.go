@@ -73,7 +73,25 @@ func (m *CommittedManifest) Load() error {
 		return nil
 	}
 
-	// Todo: decode the data.
+	// Verify checksum
+	checksum := binary.LittleEndian.Uint32(data[len(data)-4:])
+	if checksum != CalcChecksum(data[:len(data)-4]) {
+		return utils.ErrChecksumNotMatch
+	}
+
+	// Decode the snapshots.
+	r := bytes.NewReader(data[:len(data)-4])
+	decoder := NewCommittedManifestDecoder(m.TenantID)
+	snapshots, err := decoder.Decode(r)
+	if err != nil {
+		return err
+	}
+	m.Snapshots = snapshots
+	for ts := range snapshots {
+		if ts > m.latestTs {
+			m.latestTs = ts
+		}
+	}
 
 	return nil
 }
