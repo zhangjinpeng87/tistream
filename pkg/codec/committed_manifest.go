@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"bytes"
 	"encoding/binary"
+	"fmt"
 	"io"
 	"sort"
 	"sync"
@@ -34,7 +35,7 @@ type CommittedManifest struct {
 
 	// Ranges Snapshots in different ts.
 	// ts -> *pb.RangesSnapshot
-	Snapshots map[uint64]*pb.RangesSnapshot
+	Snapshots []*pb.RangesSnapshot
 	latestTs  uint64
 }
 
@@ -49,13 +50,17 @@ func NewCommittedDataPoolManifest(tenantID uint64, rootDir string, backendStorag
 }
 
 // AddSnapshot adds a snapshot to the committed manifest.
-func (m *CommittedManifest) AddSnapshot(ts uint64, snapshot *pb.RangesSnapshot) {
+func (m *CommittedManifest) AddSnapshot(ts uint64, snapshot *pb.RangesSnapshot) error {
 	m.Lock()
 	defer m.Unlock()
-	m.Snapshots[ts] = snapshot
-	if ts > m.latestTs {
-		m.latestTs = ts
+
+	if ts <= m.latestTs {
+		return fmt.Errorf("invalid snapshto with ts %d, it should be larger than the latest ts %d", ts, m.latestTs)
 	}
+
+	m.Snapshots = append(m.Snapshots, snapshot)
+
+	return nil
 }
 
 // Load from file.
@@ -87,9 +92,9 @@ func (m *CommittedManifest) Load() error {
 		return err
 	}
 	m.Snapshots = snapshots
-	for ts := range snapshots {
-		if ts > m.latestTs {
-			m.latestTs = ts
+	for _, s := range snapshots {
+		if s.Ts > m.latestTs {
+			m.latestTs = s.Ts
 		}
 	}
 
@@ -137,18 +142,8 @@ func (m *CommittedManifest) CompactTo(ts uint64) bool {
 		return false
 	}
 
-	// collect all ts
-	allTs := make([]uint64, 0, len(m.Snapshots))
-	for t := range m.Snapshots {
-		allTs = append(allTs, t)
-	}
-	// sort ts
-	sort.Slice(allTs, func(i, j int) bool {
-		return allTs[i] < allTs[j]
-	})
-
-	pos := sort.Search(len(allTs), func(i int) bool {
-		return allTs[i] > ts
+	pos := sort.Search(len(m.Snapshots), func(i int) bool {
+		return m.Snapshots[i].Ts > ts
 	})
 	if pos <= 1 {
 		// No need to compact.
@@ -156,11 +151,9 @@ func (m *CommittedManifest) CompactTo(ts uint64) bool {
 		// Pos == 1 allTs[0] is the first snapshot less or eqaul to ts, we should keep it.
 		return false
 	}
-	newSnapshots := make(map[uint64]*pb.RangesSnapshot)
-	for i := pos - 1; i < len(allTs); i++ {
-		newSnapshots[allTs[i]] = m.Snapshots[allTs[i]]
-	}
-	m.Snapshots = newSnapshots
+	m.Snapshots = m.Snapshots[pos-1:]
+
+	// todo: remove the old files.
 
 	return true
 }
@@ -176,7 +169,7 @@ func NewCommittedManifestEncoder(tenantID uint64) *CommittedManifestEncoder {
 	}
 }
 
-func (e *CommittedManifestEncoder) Encode(w io.Writer, snapshots map[uint64]*pb.RangesSnapshot) error {
+func (e *CommittedManifestEncoder) Encode(w io.Writer, snapshots []*pb.RangesSnapshot) error {
 	// Encode the header.
 	// Write the magic header
 	if _, err := w.Write([]byte(CommittedManifestMagic)); err != nil {
@@ -226,7 +219,7 @@ func NewCommittedManifestDecoder(tenantID uint64) *CommittedManifestDecoder {
 	}
 }
 
-func (d *CommittedManifestDecoder) Decode(r io.Reader) (map[uint64]*pb.RangesSnapshot, error) {
+func (d *CommittedManifestDecoder) Decode(r io.Reader) ([]*pb.RangesSnapshot, error) {
 	// Decode the header.
 	// Read the magic header
 	magic := make([]byte, len(CommittedManifestMagic))
@@ -248,7 +241,7 @@ func (d *CommittedManifestDecoder) Decode(r io.Reader) (map[uint64]*pb.RangesSna
 	}
 }
 
-func (d *CommittedManifestDecoder) DecodeV1(r io.Reader) (map[uint64]*pb.RangesSnapshot, error) {
+func (d *CommittedManifestDecoder) DecodeV1(r io.Reader) ([]*pb.RangesSnapshot, error) {
 	// Read the tenant id
 	var tenantID uint64
 	if err := binary.Read(r, binary.LittleEndian, &tenantID); err != nil {
@@ -262,7 +255,7 @@ func (d *CommittedManifestDecoder) DecodeV1(r io.Reader) (map[uint64]*pb.RangesS
 	}
 
 	// Read the snapshots
-	snapshots := make(map[uint64]*pb.RangesSnapshot)
+	snapshots := make([]*pb.RangesSnapshot, 0, snapshotCnt)
 	for i := uint32(0); i < snapshotCnt; i++ {
 		// Read the data len
 		var dataLen uint32
@@ -281,7 +274,7 @@ func (d *CommittedManifestDecoder) DecodeV1(r io.Reader) (map[uint64]*pb.RangesS
 		if err := proto.Unmarshal(data, &snapshot); err != nil {
 			return nil, err
 		}
-		snapshots[snapshot.Ts] = &snapshot
+		snapshots = append(snapshots, &snapshot)
 	}
 
 	return snapshots, nil

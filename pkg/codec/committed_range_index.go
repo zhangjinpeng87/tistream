@@ -10,6 +10,7 @@ import (
 )
 
 const (
+	CommittedRangeIndexName = "committed_range_index"
 	// The magic number of the committed range index file.
 	CommittedRangeIndexMagicNumber = uint32(0x30541990)
 	CommittedRangeIndexVersion     = uint32(1)
@@ -151,6 +152,24 @@ func (c *CommittedRangeIndexDecoder) Decode(r io.Reader) ([]uint64, error) {
 		if err := binary.Read(r, binary.LittleEndian, &tsArray[i]); err != nil {
 			return nil, err
 		}
+	}
+
+	return tsArray, nil
+}
+
+func GetCommittedRangeIndex(fdata []byte, tenantId uint64, range_ *pb.Task_Range) ([]uint64, error) {
+	// verify the checksum of the committed range index file.
+	checksum := CalcChecksum(fdata[:len(fdata)-4])
+	expectedChecksum := binary.LittleEndian.Uint32(fdata[len(fdata)-4:])
+	if checksum != expectedChecksum {
+		return nil, utils.ErrChecksumNotMatch
+	}
+
+	// Decode the committed range index file.
+	decoder := NewCommittedRangeIndexDecoder(tenantId, range_)
+	tsArray, err := decoder.Decode(bytes.NewReader(fdata[:len(fdata)-4]))
+	if err != nil {
+		return nil, err
 	}
 
 	return tsArray, nil

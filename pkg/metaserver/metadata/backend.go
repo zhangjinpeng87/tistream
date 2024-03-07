@@ -61,6 +61,7 @@ func (b *Backend) BootstrapSchema() error {
 	// 	  tenant_id int(10), // Task belongs to which tenant. Typically there is just one task for each tenant, there might be multiple tasks if the tenant is large.
 	// 	  range_start varchar(255), // Start key of this continuous range
 	// 	  range_end varchar(255),
+	// 	  uuid varchar(255), // UUID of this task, the UUID will be used as the directory name in the storage
 	// 	  sorter_addr varchar(255), Which sorter is responsible for this task
 	// 	  snapshot_addr varchar(255), // Where to store the task snapshot
 	//    unique (tenant_id, range_start), // There should be only one task for each tenant and range
@@ -70,6 +71,7 @@ func (b *Backend) BootstrapSchema() error {
 		"tenant_id INT," +
 		"range_start VARCHAR(255)," +
 		"range_end VARCHAR(255)," +
+		"uuid VARCHAR(255), " +
 		"sorter_addr VARCHAR(255)," +
 		"snapshot_addr VARCHAR(255)," +
 		"created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, " +

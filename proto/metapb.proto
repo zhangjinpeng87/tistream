@@ -35,6 +35,7 @@ message Task {
     message Range {
         bytes start = 1;
         bytes end = 2;
+        string uuid = 3; // unique id for a range. it is used as the folder name for the range.
     }
 
     uint64 tenant_id = 1;

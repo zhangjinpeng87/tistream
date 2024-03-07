@@ -12,3 +12,10 @@ func RangeOverlapped(r1 *pb.Task_Range, r2 *pb.Task_Range) bool {
 	}
 	return false
 }
+
+func TsRangeOverlapped(low1, high1, low2, high2 uint64) bool {
+	if low1 < high2 && low2 < high1 {
+		return true
+	}
+	return false
+}
