@@ -1,0 +1,41 @@
+syntax = "proto3";
+package tistreampb;
+
+option go_package = "./";
+
+message Table {
+    enum OP {
+        CREATE = 0;
+        DROP = 1;
+        ALTER = 2;
+    }
+
+    string name = 1;
+    uint64 id = 2;
+    OP op = 3;
+    uint64 ts = 4;
+    string statement = 5;
+    string create_statement = 6;
+}
+
+message Schema {
+    enum OP {
+        CREATE = 0;
+        DROP = 1;
+    }
+
+    string name = 1;
+    OP op = 2;
+    uint64 ts = 3;
+}
+
+message SchemaTables {
+    string name = 1;
+    repeated Table tables = 2;
+}
+
+message SchemasSnapshot {
+    uint64 ts = 1;
+    repeated SchemaTables schemas = 2;
+}
+
