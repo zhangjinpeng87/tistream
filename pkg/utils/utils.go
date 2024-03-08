@@ -2,6 +2,7 @@ package utils
 
 import (
 	"bytes"
+	"encoding/binary"
 	"sort"
 )
 
@@ -16,4 +17,14 @@ func SortDedupSlice(src [][]byte) [][]byte {
 		}
 	}
 	return dst
+}
+
+func TsToReverseBytes(ts uint64) []byte {
+	b := make([]byte, 8)
+	binary.BigEndian.PutUint64(b, ^ts)
+	return b
+}
+
+func ReverseBytesToTs(b []byte) uint64 {
+	return ^binary.BigEndian.Uint64(b)
 }

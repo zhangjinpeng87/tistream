@@ -1,10 +1,12 @@
 package schemastorage
 
 import (
+	"bytes"
 	"fmt"
 
 	"github.com/huandu/skiplist"
 	"github.com/zhangjinpeng87/tistream/pkg/storage"
+	"github.com/zhangjinpeng87/tistream/pkg/utils"
 
 	pb "github.com/zhangjinpeng87/tistream/proto/go/tistreampb"
 )
@@ -44,7 +46,7 @@ func NewSchemaStorage(tenantID uint64, backendStorage storage.ExternalStorage) *
 	return &SchemaStorage{
 		tenantID:       tenantID,
 		backendStorage: backendStorage,
-		tables:         skiplist.New(skiplist.StringDesc), // We use desc order to get the latest table schema.
+		tables:         skiplist.New(skiplist.ByteAsc),
 	}
 }
 
@@ -52,14 +54,14 @@ func NewSchemaStorage(tenantID uint64, backendStorage storage.ExternalStorage) *
 func (s *SchemaStorage) AddTableRecord(db string, table *pb.Table, ts uint64) {
 	// Put the table into the skiplist.
 	// We use the reverse ts as the score, so we can get the largest version of  a specifed ts can see.
-	k := fmt.Sprintf("%s.%d.%020d", db, table.Id, ts)
+	k := TableKey(db, table.Id, ts)
 	s.tables.Set(k, table)
 }
 
 // GetTable gets the schema of the specified table.
 func (s *SchemaStorage) GetTable(db string, tableID, ts uint64) (*pb.Table, error) {
 	// Get the table from the skiplist.
-	k := fmt.Sprintf("t.%s.%d.%020d", db, tableID, ts)
+	k := TableKey(db, tableID, ts)
 	ele := s.tables.Find(k)
 	if ele != nil {
 		t := ele.Value.(*pb.Table)
@@ -72,12 +74,12 @@ func (s *SchemaStorage) GetTable(db string, tableID, ts uint64) (*pb.Table, erro
 }
 
 func (s *SchemaStorage) AddDBRecord(db *pb.Schema, ts uint64) {
-	k := fmt.Sprintf("d.%s.%020d", db, ts)
+	k := DatabaseKey(db.Name, ts)
 	s.tables.Set(k, db)
 }
 
 func (s *SchemaStorage) ListDatabases(ts uint64) []string {
-	k := "d."
+	k := []byte("d.")
 	ele := s.tables.Find(k)
 	var currentDb string
 	res := make([]string, 0)
@@ -97,7 +99,50 @@ func (s *SchemaStorage) ListDatabases(ts uint64) []string {
 	return res
 }
 
+func (s *SchemaStorage) CompactTo(ts uint64) {
+	ele := s.tables.Front()
+	gcKeys := make([][]byte, 0)
+	var curUserKey []byte
+	var skippedLastVersion bool
+	for ele != nil {
+		key := ele.Key().([]byte)
+		userKey := key[:len(key)-8]
+		keyTs := utils.ReverseBytesToTs(key[len(key)-8:])
+
+		// This is a new user key.
+		if !bytes.Equal(userKey, curUserKey) {
+			skippedLastVersion = false
+			curUserKey = userKey
+			continue
+		}
+
+		if keyTs <= ts {
+			if skippedLastVersion {
+				gcKeys = append(gcKeys, key)
+			} else {
+				skippedLastVersion = true
+			}
+		}
+
+		ele = ele.Next()
+	}
+
+	for _, k := range gcKeys {
+		s.tables.Remove(k)
+	}
+}
+
 // GetSnapshot gets the snapshot of the schema storage.
 func (s *SchemaStorage) GetSnapshot() SchemaSnapshot {
 	return nil
+}
+
+func TableKey(db string, tableID, ts uint64) []byte {
+	kPrefix := fmt.Sprintf("t.%s.%d", db, tableID)
+	return append([]byte(kPrefix), utils.TsToReverseBytes(ts)...)
+}
+
+func DatabaseKey(db string, ts uint64) []byte {
+	kPrefix := fmt.Sprintf("d.%s", db)
+	return append([]byte(kPrefix), utils.TsToReverseBytes(ts)...)
 }
