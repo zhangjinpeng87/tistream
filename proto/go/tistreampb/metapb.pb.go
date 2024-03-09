@@ -872,6 +872,208 @@ func (x *RangesSnapshot) GetRanges() []*Task_Range {
 	return nil
 }
 
+type RegisterDDLReq struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	TenantId uint64 `protobuf:"varint,1,opt,name=tenant_id,json=tenantId,proto3" json:"tenant_id,omitempty"`
+	Ts       uint64 `protobuf:"varint,2,opt,name=ts,proto3" json:"ts,omitempty"`
+	Ddl      string `protobuf:"bytes,3,opt,name=ddl,proto3" json:"ddl,omitempty"`
+}
+
+func (x *RegisterDDLReq) Reset() {
+	*x = RegisterDDLReq{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_metapb_proto_msgTypes[15]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *RegisterDDLReq) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RegisterDDLReq) ProtoMessage() {}
+
+func (x *RegisterDDLReq) ProtoReflect() protoreflect.Message {
+	mi := &file_metapb_proto_msgTypes[15]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use RegisterDDLReq.ProtoReflect.Descriptor instead.
+func (*RegisterDDLReq) Descriptor() ([]byte, []int) {
+	return file_metapb_proto_rawDescGZIP(), []int{15}
+}
+
+func (x *RegisterDDLReq) GetTenantId() uint64 {
+	if x != nil {
+		return x.TenantId
+	}
+	return 0
+}
+
+func (x *RegisterDDLReq) GetTs() uint64 {
+	if x != nil {
+		return x.Ts
+	}
+	return 0
+}
+
+func (x *RegisterDDLReq) GetDdl() string {
+	if x != nil {
+		return x.Ddl
+	}
+	return ""
+}
+
+type RegisterDDLResp struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+}
+
+func (x *RegisterDDLResp) Reset() {
+	*x = RegisterDDLResp{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_metapb_proto_msgTypes[16]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *RegisterDDLResp) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RegisterDDLResp) ProtoMessage() {}
+
+func (x *RegisterDDLResp) ProtoReflect() protoreflect.Message {
+	mi := &file_metapb_proto_msgTypes[16]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use RegisterDDLResp.ProtoReflect.Descriptor instead.
+func (*RegisterDDLResp) Descriptor() ([]byte, []int) {
+	return file_metapb_proto_rawDescGZIP(), []int{16}
+}
+
+type RegisterSchemaSnapReq struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	TenantId uint64 `protobuf:"varint,1,opt,name=tenant_id,json=tenantId,proto3" json:"tenant_id,omitempty"`
+	Ts       uint64 `protobuf:"varint,2,opt,name=ts,proto3" json:"ts,omitempty"`
+	Schema   string `protobuf:"bytes,3,opt,name=schema,proto3" json:"schema,omitempty"`
+}
+
+func (x *RegisterSchemaSnapReq) Reset() {
+	*x = RegisterSchemaSnapReq{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_metapb_proto_msgTypes[17]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *RegisterSchemaSnapReq) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RegisterSchemaSnapReq) ProtoMessage() {}
+
+func (x *RegisterSchemaSnapReq) ProtoReflect() protoreflect.Message {
+	mi := &file_metapb_proto_msgTypes[17]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use RegisterSchemaSnapReq.ProtoReflect.Descriptor instead.
+func (*RegisterSchemaSnapReq) Descriptor() ([]byte, []int) {
+	return file_metapb_proto_rawDescGZIP(), []int{17}
+}
+
+func (x *RegisterSchemaSnapReq) GetTenantId() uint64 {
+	if x != nil {
+		return x.TenantId
+	}
+	return 0
+}
+
+func (x *RegisterSchemaSnapReq) GetTs() uint64 {
+	if x != nil {
+		return x.Ts
+	}
+	return 0
+}
+
+func (x *RegisterSchemaSnapReq) GetSchema() string {
+	if x != nil {
+		return x.Schema
+	}
+	return ""
+}
+
+type RegisterSchemaSnapResp struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+}
+
+func (x *RegisterSchemaSnapResp) Reset() {
+	*x = RegisterSchemaSnapResp{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_metapb_proto_msgTypes[18]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *RegisterSchemaSnapResp) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RegisterSchemaSnapResp) ProtoMessage() {}
+
+func (x *RegisterSchemaSnapResp) ProtoReflect() protoreflect.Message {
+	mi := &file_metapb_proto_msgTypes[18]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use RegisterSchemaSnapResp.ProtoReflect.Descriptor instead.
+func (*RegisterSchemaSnapResp) Descriptor() ([]byte, []int) {
+	return file_metapb_proto_rawDescGZIP(), []int{18}
+}
+
 type Task_Range struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -885,7 +1087,7 @@ type Task_Range struct {
 func (x *Task_Range) Reset() {
 	*x = Task_Range{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_metapb_proto_msgTypes[15]
+		mi := &file_metapb_proto_msgTypes[19]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -898,7 +1100,7 @@ func (x *Task_Range) String() string {
 func (*Task_Range) ProtoMessage() {}
 
 func (x *Task_Range) ProtoReflect() protoreflect.Message {
-	mi := &file_metapb_proto_msgTypes[15]
+	mi := &file_metapb_proto_msgTypes[19]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -940,7 +1142,8 @@ var File_metapb_proto protoreflect.FileDescriptor
 var file_metapb_proto_rawDesc = []byte{
 	0x0a, 0x0c, 0x6d, 0x65, 0x74, 0x61, 0x70, 0x62, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x12, 0x0a,
 	0x74, 0x69, 0x73, 0x74, 0x72, 0x65, 0x61, 0x6d, 0x70, 0x62, 0x1a, 0x0d, 0x65, 0x76, 0x65, 0x6e,
-	0x74, 0x70, 0x62, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x22, 0x2e, 0x0a, 0x0f, 0x48, 0x61, 0x73,
+	0x74, 0x70, 0x62, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x1a, 0x0e, 0x73, 0x63, 0x68, 0x65, 0x6d,
+	0x61, 0x70, 0x62, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x22, 0x2e, 0x0a, 0x0f, 0x48, 0x61, 0x73,
 	0x4e, 0x65, 0x77, 0x43, 0x68, 0x61, 0x6e, 0x67, 0x65, 0x52, 0x65, 0x71, 0x12, 0x1b, 0x0a, 0x09,
 	0x74, 0x65, 0x6e, 0x61, 0x6e, 0x74, 0x5f, 0x69, 0x64, 0x18, 0x01, 0x20, 0x03, 0x28, 0x04, 0x52,
 	0x08, 0x74, 0x65, 0x6e, 0x61, 0x6e, 0x74, 0x49, 0x64, 0x22, 0x12, 0x0a, 0x10, 0x48, 0x61, 0x73,
@@ -1029,10 +1232,23 @@ var file_metapb_proto_rawDesc = []byte{
 	0x73, 0x12, 0x2e, 0x0a, 0x06, 0x72, 0x61, 0x6e, 0x67, 0x65, 0x73, 0x18, 0x03, 0x20, 0x03, 0x28,
 	0x0b, 0x32, 0x16, 0x2e, 0x74, 0x69, 0x73, 0x74, 0x72, 0x65, 0x61, 0x6d, 0x70, 0x62, 0x2e, 0x54,
 	0x61, 0x73, 0x6b, 0x2e, 0x52, 0x61, 0x6e, 0x67, 0x65, 0x52, 0x06, 0x72, 0x61, 0x6e, 0x67, 0x65,
-	0x73, 0x2a, 0x20, 0x0a, 0x06, 0x54, 0x61, 0x73, 0x6b, 0x4f, 0x70, 0x12, 0x0a, 0x0a, 0x06, 0x41,
-	0x74, 0x74, 0x61, 0x63, 0x68, 0x10, 0x00, 0x12, 0x0a, 0x0a, 0x06, 0x44, 0x65, 0x74, 0x61, 0x63,
-	0x68, 0x10, 0x01, 0x42, 0x04, 0x5a, 0x02, 0x2e, 0x2f, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f,
-	0x33,
+	0x73, 0x22, 0x4f, 0x0a, 0x0e, 0x52, 0x65, 0x67, 0x69, 0x73, 0x74, 0x65, 0x72, 0x44, 0x44, 0x4c,
+	0x52, 0x65, 0x71, 0x12, 0x1b, 0x0a, 0x09, 0x74, 0x65, 0x6e, 0x61, 0x6e, 0x74, 0x5f, 0x69, 0x64,
+	0x18, 0x01, 0x20, 0x01, 0x28, 0x04, 0x52, 0x08, 0x74, 0x65, 0x6e, 0x61, 0x6e, 0x74, 0x49, 0x64,
+	0x12, 0x0e, 0x0a, 0x02, 0x74, 0x73, 0x18, 0x02, 0x20, 0x01, 0x28, 0x04, 0x52, 0x02, 0x74, 0x73,
+	0x12, 0x10, 0x0a, 0x03, 0x64, 0x64, 0x6c, 0x18, 0x03, 0x20, 0x01, 0x28, 0x09, 0x52, 0x03, 0x64,
+	0x64, 0x6c, 0x22, 0x11, 0x0a, 0x0f, 0x52, 0x65, 0x67, 0x69, 0x73, 0x74, 0x65, 0x72, 0x44, 0x44,
+	0x4c, 0x52, 0x65, 0x73, 0x70, 0x22, 0x5c, 0x0a, 0x15, 0x52, 0x65, 0x67, 0x69, 0x73, 0x74, 0x65,
+	0x72, 0x53, 0x63, 0x68, 0x65, 0x6d, 0x61, 0x53, 0x6e, 0x61, 0x70, 0x52, 0x65, 0x71, 0x12, 0x1b,
+	0x0a, 0x09, 0x74, 0x65, 0x6e, 0x61, 0x6e, 0x74, 0x5f, 0x69, 0x64, 0x18, 0x01, 0x20, 0x01, 0x28,
+	0x04, 0x52, 0x08, 0x74, 0x65, 0x6e, 0x61, 0x6e, 0x74, 0x49, 0x64, 0x12, 0x0e, 0x0a, 0x02, 0x74,
+	0x73, 0x18, 0x02, 0x20, 0x01, 0x28, 0x04, 0x52, 0x02, 0x74, 0x73, 0x12, 0x16, 0x0a, 0x06, 0x73,
+	0x63, 0x68, 0x65, 0x6d, 0x61, 0x18, 0x03, 0x20, 0x01, 0x28, 0x09, 0x52, 0x06, 0x73, 0x63, 0x68,
+	0x65, 0x6d, 0x61, 0x22, 0x18, 0x0a, 0x16, 0x52, 0x65, 0x67, 0x69, 0x73, 0x74, 0x65, 0x72, 0x53,
+	0x63, 0x68, 0x65, 0x6d, 0x61, 0x53, 0x6e, 0x61, 0x70, 0x52, 0x65, 0x73, 0x70, 0x2a, 0x20, 0x0a,
+	0x06, 0x54, 0x61, 0x73, 0x6b, 0x4f, 0x70, 0x12, 0x0a, 0x0a, 0x06, 0x41, 0x74, 0x74, 0x61, 0x63,
+	0x68, 0x10, 0x00, 0x12, 0x0a, 0x0a, 0x06, 0x44, 0x65, 0x74, 0x61, 0x63, 0x68, 0x10, 0x01, 0x42,
+	0x04, 0x5a, 0x02, 0x2e, 0x2f, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
 }
 
 var (
@@ -1048,7 +1264,7 @@ func file_metapb_proto_rawDescGZIP() []byte {
 }
 
 var file_metapb_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_metapb_proto_msgTypes = make([]protoimpl.MessageInfo, 16)
+var file_metapb_proto_msgTypes = make([]protoimpl.MessageInfo, 20)
 var file_metapb_proto_goTypes = []interface{}{
 	(TaskOp)(0),                     // 0: tistreampb.TaskOp
 	(*HasNewChangeReq)(nil),         // 1: tistreampb.HasNewChangeReq
@@ -1066,23 +1282,27 @@ var file_metapb_proto_goTypes = []interface{}{
 	(*PullTenantDataReq)(nil),       // 13: tistreampb.PullTenantDataReq
 	(*PullTenantDataResp)(nil),      // 14: tistreampb.PullTenantDataResp
 	(*RangesSnapshot)(nil),          // 15: tistreampb.RangesSnapshot
-	(*Task_Range)(nil),              // 16: tistreampb.Task.Range
-	(*EventRow)(nil),                // 17: tistreampb.EventRow
-	(*EventWatermark)(nil),          // 18: tistreampb.EventWatermark
+	(*RegisterDDLReq)(nil),          // 16: tistreampb.RegisterDDLReq
+	(*RegisterDDLResp)(nil),         // 17: tistreampb.RegisterDDLResp
+	(*RegisterSchemaSnapReq)(nil),   // 18: tistreampb.RegisterSchemaSnapReq
+	(*RegisterSchemaSnapResp)(nil),  // 19: tistreampb.RegisterSchemaSnapResp
+	(*Task_Range)(nil),              // 20: tistreampb.Task.Range
+	(*EventRow)(nil),                // 21: tistreampb.EventRow
+	(*EventWatermark)(nil),          // 22: tistreampb.EventWatermark
 }
 var file_metapb_proto_depIdxs = []int32{
 	10, // 0: tistreampb.DispatcherHeartbeatReq.tenant_stats:type_name -> tistreampb.TenantSubStats
 	10, // 1: tistreampb.SorterHeartbeatReq.tenant_stats:type_name -> tistreampb.TenantSubStats
-	16, // 2: tistreampb.Task.range:type_name -> tistreampb.Task.Range
-	16, // 3: tistreampb.RangeChangesReq.range:type_name -> tistreampb.Task.Range
-	17, // 4: tistreampb.RangeChangesReq.rows:type_name -> tistreampb.EventRow
-	18, // 5: tistreampb.RangeChangesReq.watermarks:type_name -> tistreampb.EventWatermark
-	16, // 6: tistreampb.TenantSubStats.range:type_name -> tistreampb.Task.Range
+	20, // 2: tistreampb.Task.range:type_name -> tistreampb.Task.Range
+	20, // 3: tistreampb.RangeChangesReq.range:type_name -> tistreampb.Task.Range
+	21, // 4: tistreampb.RangeChangesReq.rows:type_name -> tistreampb.EventRow
+	22, // 5: tistreampb.RangeChangesReq.watermarks:type_name -> tistreampb.EventWatermark
+	20, // 6: tistreampb.TenantSubStats.range:type_name -> tistreampb.Task.Range
 	7,  // 7: tistreampb.TenantTasksReq.tasks:type_name -> tistreampb.Task
 	0,  // 8: tistreampb.TenantTasksReq.op:type_name -> tistreampb.TaskOp
-	16, // 9: tistreampb.PullTenantDataReq.range:type_name -> tistreampb.Task.Range
-	17, // 10: tistreampb.PullTenantDataResp.rows:type_name -> tistreampb.EventRow
-	16, // 11: tistreampb.RangesSnapshot.ranges:type_name -> tistreampb.Task.Range
+	20, // 9: tistreampb.PullTenantDataReq.range:type_name -> tistreampb.Task.Range
+	21, // 10: tistreampb.PullTenantDataResp.rows:type_name -> tistreampb.EventRow
+	20, // 11: tistreampb.RangesSnapshot.ranges:type_name -> tistreampb.Task.Range
 	12, // [12:12] is the sub-list for method output_type
 	12, // [12:12] is the sub-list for method input_type
 	12, // [12:12] is the sub-list for extension type_name
@@ -1096,6 +1316,7 @@ func file_metapb_proto_init() {
 		return
 	}
 	file_eventpb_proto_init()
+	file_schemapb_proto_init()
 	if !protoimpl.UnsafeEnabled {
 		file_metapb_proto_msgTypes[0].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*HasNewChangeReq); i {
@@ -1278,6 +1499,54 @@ func file_metapb_proto_init() {
 			}
 		}
 		file_metapb_proto_msgTypes[15].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*RegisterDDLReq); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_metapb_proto_msgTypes[16].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*RegisterDDLResp); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_metapb_proto_msgTypes[17].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*RegisterSchemaSnapReq); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_metapb_proto_msgTypes[18].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*RegisterSchemaSnapResp); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_metapb_proto_msgTypes[19].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*Task_Range); i {
 			case 0:
 				return &v.state
@@ -1296,7 +1565,7 @@ func file_metapb_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_metapb_proto_rawDesc,
 			NumEnums:      1,
-			NumMessages:   16,
+			NumMessages:   20,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

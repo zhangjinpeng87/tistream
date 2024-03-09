@@ -25,13 +25,19 @@ message Schema {
     }
 
     string name = 1;
-    OP op = 2;
-    uint64 ts = 3;
+    uint64 id = 2;
+    string charset = 3;
+    string collation = 4;
+    OP op = 5;
+    uint64 ts = 6;
 }
 
 message SchemaTables {
     string name = 1;
-    repeated Table tables = 2;
+    uint64 id = 2;
+    string charset = 3;
+    string collation = 4;
+    repeated Table tables = 5;
 }
 
 message SchemasSnapshot {

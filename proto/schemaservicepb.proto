@@ -1,0 +1,11 @@
+syntax = "proto3";
+package tistreampb;
+
+import "metapb.proto";
+
+option go_package = "./";
+
+service SchemaService {
+    rpc RegisterSchemaSnap(tistreampb.RegisterSchemaSnapReq) returns (tistreampb.RegisterSchemaSnapResp);
+    rpc RegisterDDLChange(tistreampb.RegisterDDLReq) returns (tistreampb.RegisterDDLResp);
+}

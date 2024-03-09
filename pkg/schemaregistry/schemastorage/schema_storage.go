@@ -11,11 +11,6 @@ import (
 	pb "github.com/zhangjinpeng87/tistream/proto/go/tistreampb"
 )
 
-const (
-	DropDatabase   uint32 = 0
-	CreateDatabase uint32 = 1
-)
-
 type SchemaSnapshot interface {
 	// ListDatabases lists the databases in the snapshot.
 	ListDatabases() []string
@@ -25,6 +20,37 @@ type SchemaSnapshot interface {
 
 	// ListTables lists the tables in the specified database.
 	ListTables(db string, ts uint64) ([]*pb.Table, error)
+}
+
+type schemaSnapshot struct {
+	// The tenant id.
+	tenantID uint64
+
+	// Timestamp of the snapshot.
+	ts uint64
+
+	// The inner storage.
+	innerStorage *SchemaStorage
+}
+
+func (s *schemaSnapshot) ListDatabases() []string {
+	return s.innerStorage.ListDatabases(s.ts)
+}
+
+func (s *schemaSnapshot) GetTable(db string, tableID, ts uint64) (*pb.Table, error) {
+	return s.innerStorage.GetTable(db, tableID, ts)
+}
+
+func (s *schemaSnapshot) ListTables(db string, ts uint64) ([]*pb.Table, error) {
+	return nil, nil
+}
+
+func NewSchemaSnapshot(tenantID, ts uint64, innerStorage *SchemaStorage) SchemaSnapshot {
+	return &schemaSnapshot{
+		tenantID:     tenantID,
+		ts:           ts,
+		innerStorage: innerStorage,
+	}
 }
 
 // SchemaStorage is a mvcc schema storage for a specified tenant.

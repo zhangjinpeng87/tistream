@@ -2,6 +2,7 @@ syntax = "proto3";
 package tistreampb;
 
 import "eventpb.proto";
+import "schemapb.proto";
 
 option go_package = "./";
 
@@ -89,4 +90,22 @@ message RangesSnapshot {
     uint64 tenant_id = 1;
     uint64 ts = 2;
     repeated Task.Range ranges = 3;
+}
+
+message RegisterDDLReq {
+    uint64 tenant_id = 1;
+    uint64 ts = 2;
+    string ddl = 3;
+}
+
+message RegisterDDLResp {
+}
+
+message RegisterSchemaSnapReq {
+    uint64 tenant_id = 1;
+    uint64 ts = 2;
+    string schema = 3;
+}
+
+message RegisterSchemaSnapResp {
 }
