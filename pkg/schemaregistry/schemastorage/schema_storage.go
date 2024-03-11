@@ -3,9 +3,9 @@ package schemastorage
 import (
 	"bytes"
 	"fmt"
+	"math"
 
 	"github.com/huandu/skiplist"
-	"github.com/zhangjinpeng87/tistream/pkg/storage"
 	"github.com/zhangjinpeng87/tistream/pkg/utils"
 
 	pb "github.com/zhangjinpeng87/tistream/proto/go/tistreampb"
@@ -59,29 +59,71 @@ type SchemaStorage struct {
 	// The tenant id.
 	tenantID uint64
 
-	// The backendStorage to store the schema files.
-	backendStorage storage.ExternalStorage
-
 	// Use skiplist to store table mvcc for last N days.
 	// db.table.ts -> pb.Table
 	tables *skiplist.SkipList
 }
 
 // NewSchemaStorage creates a new SchemaStorage.
-func NewSchemaStorage(tenantID uint64, backendStorage storage.ExternalStorage) *SchemaStorage {
+func NewSchemaStorage(tenantID uint64) *SchemaStorage {
 	return &SchemaStorage{
-		tenantID:       tenantID,
-		backendStorage: backendStorage,
-		tables:         skiplist.New(skiplist.ByteAsc),
+		tenantID: tenantID,
+		tables:   skiplist.New(skiplist.ByteAsc),
 	}
 }
 
-// AddTable puts the schema of the specified table.
-func (s *SchemaStorage) AddTableRecord(db string, table *pb.Table, ts uint64) {
-	// Put the table into the skiplist.
-	// We use the reverse ts as the score, so we can get the largest version of  a specifed ts can see.
-	k := TableKey(db, table.Id, ts)
+func NewSchemaStorageFromSnapshot(tenantID uint64, schemaSnapReq *pb.RegisterSchemaSnapReq) *SchemaStorage {
+	s := NewSchemaStorage(tenantID)
+	for _, db_tables := range schemaSnapReq.SchemaSnap.Schemas {
+		db := db_tables.Schema
+		db.Ts = schemaSnapReq.Ts
+		s.AddDBRecord(db, db.Ts)
+
+		for _, t := range db_tables.Tables {
+			t.Ts = schemaSnapReq.Ts
+			s.AddTableRecord(db.Name, t, t.Ts)
+		}
+	}
+
+	return s
+}
+
+// AddTableRecord puts the schema of the specified table.
+func (s *SchemaStorage) AddTableRecord(db string, table *pb.Table) error {
+	// Find the largest version of this table.
+	kMax := TableKey(db, table.Id, uint64(math.MaxUint64))
+	ele := s.tables.Find(kMax)
+	if ele != nil {
+		t := ele.Value.(*pb.Table)
+		if t.Name == table.Name {
+			if t.Ts >= table.Ts {
+				return fmt.Errorf("table %s exists larger version, version %d", t.Name, t.Ts)
+			}
+		}
+	}
+
+	k := TableKey(db, table.Id, table.Ts)
 	s.tables.Set(k, table)
+
+	return nil
+}
+
+// AddSchemaRecord puts the schema of the specified database.
+func (s *SchemaStorage) AddSchemaRecord(schema *pb.Schema) error {
+	// Check if there is a newer version of this db.
+	kMax := DatabaseKey(schema.Name, uint64(math.MaxUint64))
+	ele := s.tables.Find(kMax)
+	if ele != nil {
+		db := ele.Value.(*pb.Schema)
+		if db.Name == schema.Name && db.Ts >= schema.Ts {
+			return fmt.Errorf("db %s exists larger version, version %d", db.Name, db.Ts)
+		}
+	}
+
+	k := DatabaseKey(schema.Name, schema.Ts)
+	s.tables.Set(k, schema)
+
+	return nil
 }
 
 // GetTable gets the schema of the specified table.

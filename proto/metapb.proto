@@ -95,17 +95,24 @@ message RangesSnapshot {
 message RegisterDDLReq {
     uint64 tenant_id = 1;
     uint64 ts = 2;
-    string ddl = 3;
+    oneof ddl {
+        Table table_ddl = 3;
+        Schema schema_ddl = 4;
+    }
 }
 
 message RegisterDDLResp {
+    uint64 tenant_id = 1;
+    string err_msg = 2;
 }
 
 message RegisterSchemaSnapReq {
     uint64 tenant_id = 1;
     uint64 ts = 2;
-    string schema = 3;
+    SchemaSnapshot schema_snap = 3;
 }
 
 message RegisterSchemaSnapResp {
+    uint64 tenant_id = 1;
+    string err_msg = 2;
 }

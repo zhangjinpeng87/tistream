@@ -20,15 +20,33 @@ func NewSorterRpcServer(m *schemastorage.SchemaManager) *schemaRpcServer {
 }
 
 func (m *schemaRpcServer) RegisterSchemaSnap(ctx context.Context, in *pb.RegisterSchemaSnapReq) (*pb.RegisterSchemaSnapResp, error) {
-	// Received the schema snap initialization from the dispatcher, setup schema snap for this tenant.
-	// TODO: Implement this.
+	// Create schema storage from the schema snap.
+	s := schemastorage.NewSchemaStorageFromSnapshot(in.TenantId, in)
+	m.schemaMgr.AddSchemaStorage(s)
 
-	return nil, nil
+	// Create the response.
+	resp := &pb.RegisterSchemaSnapResp{
+		TenantId: in.TenantId,
+		/*todo: other response fields*/
+	}
+
+	return resp, nil
 }
 
 func (m *schemaRpcServer) RegisterDDLChange(ctx context.Context, in *pb.RegisterDDLReq) (*pb.RegisterDDLResp, error) {
-	// Received the ddl changes from the dispatcher.
-	// TODO: Implement this.
+	resp := &pb.RegisterDDLResp{}
+	resp.TenantId = in.TenantId
 
-	return nil, nil
+	switch in.Ddl.(type) {
+	case *pb.RegisterDDLReq_TableDdl:
+		t := in.Ddl.(*pb.RegisterDDLReq_TableDdl).TableDdl
+		err := m.schemaMgr.AddTableDdl(in.TenantId, t)
+		resp.ErrMsg = err.Error()
+	case *pb.RegisterDDLReq_SchemaDdl:
+		s := in.Ddl.(*pb.RegisterDDLReq_SchemaDdl).SchemaDdl
+		err := m.schemaMgr.AddSchemaDdl(in.TenantId, s)
+		resp.ErrMsg = err.Error()
+	}
+
+	return resp, nil
 }

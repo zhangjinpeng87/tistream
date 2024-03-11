@@ -11,7 +11,7 @@ build:
 	@GO111MODULE=on go build -o bin/schema-registry cmd/schema-registry/main.go;
 	@echo "Build complete"
 
-gen_proto:
+proto_gen:
 	@echo "Generating go proto files..."
 	@protoc \
 		--proto_path=proto \
@@ -22,7 +22,7 @@ gen_proto:
 		proto/*.proto
 	@echo "Go proto files generated"
 
-clean_proto:
+proto_clean:
 	@echo "Cleaning go proto files..."
 	@rm proto/go/tistreampb/*
 	@echo "Done"

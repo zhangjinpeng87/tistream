@@ -16,6 +16,7 @@ message Table {
     uint64 ts = 4;
     string statement = 5;
     string create_statement = 6;
+    Schema schema = 7;
 }
 
 message Schema {
@@ -33,14 +34,11 @@ message Schema {
 }
 
 message SchemaTables {
-    string name = 1;
-    uint64 id = 2;
-    string charset = 3;
-    string collation = 4;
-    repeated Table tables = 5;
+    Schema schema = 1;
+    repeated Table tables = 2;
 }
 
-message SchemasSnapshot {
+message SchemaSnapshot {
     uint64 ts = 1;
     repeated SchemaTables schemas = 2;
 }
