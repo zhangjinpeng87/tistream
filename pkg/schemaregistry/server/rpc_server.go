@@ -13,7 +13,7 @@ type schemaRpcServer struct {
 	schemaMgr *schemastorage.SchemaManager
 }
 
-func NewSorterRpcServer(m *schemastorage.SchemaManager) *schemaRpcServer {
+func NewSchemaRpcServer(m *schemastorage.SchemaManager) *schemaRpcServer {
 	return &schemaRpcServer{
 		schemaMgr: m,
 	}

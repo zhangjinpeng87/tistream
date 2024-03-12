@@ -9,4 +9,6 @@ service MetaService {
     rpc TenantHasNewChange(tistreampb.HasNewChangeReq) returns (tistreampb.HasNewChangeResp);
     rpc DispatcherHeartbeat(tistreampb.DispatcherHeartbeatReq) returns (tistreampb.DispatcherHeartbeatResp);
     rpc SorterHeartbeat(tistreampb.SorterHeartbeatReq) returns (tistreampb.SorterHeartbeatResp);
+    rpc FetchSchemaRegistryAddr(tistreampb.FetchSchemaRegistryAddrReq) returns (tistreampb.FetchSchemaRegistryAddrResp);
+    rpc FetchRangeSorterAddr(tistreampb.FetchRangeSorterAddrReq) returns (tistreampb.FetchRangeSorterAddrResp);
 }

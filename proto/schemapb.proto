@@ -33,6 +33,11 @@ message Schema {
     uint64 ts = 6;
 }
 
+message DDLChange {
+    Table table = 1;
+    Schema schema = 2;
+}
+
 message SchemaTables {
     Schema schema = 1;
     repeated Table tables = 2;

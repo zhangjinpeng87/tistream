@@ -55,16 +55,19 @@ type TenantDataChanges struct {
 	// StoreID -> StoreProgress
 	storesProgress map[string]*StoreProgress
 
+	fileSender chan<- *codec.DataChangesFileDecoder
+
 	// Stats
 	// Throughput sinnce last report.
 	throughput atomic.Uint64
 }
 
 // NewTenantDataChanges creates a new TenantDataChanges.
-func NewTenantDataChanges(tenantID uint64, rootDir string, backendStorage storage.ExternalStorage) *TenantDataChanges {
+func NewTenantDataChanges(tenantID uint64, rootDir string, fileSender chan<- *codec.DataChangesFileDecoder, storage.ExternalStorage) *TenantDataChanges {
 	return &TenantDataChanges{
 		tenantID:       tenantID,
 		rootDir:        rootDir,
+		fileSender:     fileSender,
 		backendStorage: backendStorage,
 	}
 }
@@ -137,7 +140,7 @@ func (t *TenantDataChanges) updateStores() error {
 }
 
 // GetSchemaSnap returns the schema snapshot of this tenant.
-func (t *TenantDataChanges) GetSchemaSnap() (*codec.SchemaSnap, error) {
+func (t *TenantDataChanges) GetSchemaSnap() (*codec.SchemaSnapFile, error) {
 	filePath := t.rootDir + schemaSnap
 
 	content, err := t.backendStorage.GetFile(filePath)
@@ -156,7 +159,8 @@ func (t *TenantDataChanges) GetSchemaSnap() (*codec.SchemaSnap, error) {
 }
 
 // Run runs the tenant data changes.
-func (t *TenantDataChanges) Run(ctx context.Context, checkStoreInterval, checkFileInterval int, recv <-chan struct{}, sender chan<- *pb.TenantSubStats) error {
+func (t *TenantDataChanges) Run(ctx context.Context, checkStoreInterval, checkFileInterval int,
+	recv <-chan struct{}, statsSender chan<- *pb.TenantSubStats) error {
 	// Initialize the tenant data changes.
 	if err := t.initialize(); err != nil {
 		return err
@@ -189,7 +193,7 @@ func (t *TenantDataChanges) Run(ctx context.Context, checkStoreInterval, checkFi
 		case <-t3.C:
 			// Report the tenant stats.
 			throughput := t.throughput.Swap(0)
-			sender <- &pb.TenantSubStats{
+			statsSender <- &pb.TenantSubStats{
 				TenantId:   t.tenantID,
 				Throughput: throughput,
 			}
@@ -269,16 +273,22 @@ func (t *TenantDataChanges) handleFile(storeProgress *StoreProgress, ts uint64) 
 	}
 
 	// Decode the file.
-	decoder := codec.NewDataChangesFileDecoder()
+	decoder := codec.NewDataChangesFileDecoder(t.tenantID)
 	reader := bytes.NewReader(content[:fileLen-4])
 	if err := decoder.DecodeFrom(reader); err != nil {
 		return 0, err
 	}
 
-	// Dispatch the event rows to the ranges.
-	// Todo: dispatch the event rows to the ranges.
-
-	return uint64(fileLen), nil
+	// Send the decoded file to this tenant's corresponding worker.
+	for {
+		select {
+		case t.fileSender <- decoder:
+			return uint64(fileLen), nil
+		default:
+			// The file sender is full, wait for the downstream worker.
+			time.Sleep(100 * time.Millisecond)
+		}
+	}
 }
 
 // listStoreDirs returns the list of store directories.

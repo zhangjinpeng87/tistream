@@ -6,11 +6,13 @@ import (
 	"github.com/zhangjinpeng87/tistream/pkg/schemaregistry/schemastorage"
 	"github.com/zhangjinpeng87/tistream/pkg/utils"
 	"golang.org/x/sync/errgroup"
+
+	pb "github.com/zhangjinpeng87/tistream/proto/go/tistreampb"
 )
 
 type SchemaServer struct {
-	// Global configuration.
-	globalConfig *utils.GlobalConfig
+	// Configuration.
+	cfg *utils.SchemaRegistryConfig
 
 	// The gRPC server.
 	grpcServer *utils.GrpcServer
@@ -23,7 +25,7 @@ type SchemaServer struct {
 	cancel context.CancelFunc
 }
 
-func NewSchemaServer(globalConfig *utils.GlobalConfig) (*SchemaServer, error) {
+func NewSchemaServer(cfg *utils.SchemaRegistryConfig) (*SchemaServer, error) {
 	// Initialize the task management.
 	ctx, cancel := context.WithCancel(context.Background())
 	eg, ctx := errgroup.WithContext(ctx)
@@ -31,12 +33,21 @@ func NewSchemaServer(globalConfig *utils.GlobalConfig) (*SchemaServer, error) {
 	mgr := schemastorage.NewSchemaManager()
 
 	return &SchemaServer{
-		globalConfig: globalConfig,
-		schemaMgr:    mgr,
-		eg:           eg,
-		ctx:          ctx,
-		cancel:       cancel,
+		cfg:       cfg,
+		schemaMgr: mgr,
+		eg:        eg,
+		ctx:       ctx,
+		cancel:    cancel,
 	}, nil
+}
+
+// Prepare prepares the server.
+func (s *SchemaServer) Prepare() error {
+	s.grpcServer = utils.NewGrpcServer(s.cfg.Addr, s.cfg.Port)
+
+	pb.RegisterSchemaServiceServer(s.grpcServer.InternalServer, NewSchemaRpcServer(s.schemaMgr))
+
+	return nil
 }
 
 func (s *SchemaServer) Start() error {

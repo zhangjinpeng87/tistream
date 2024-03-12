@@ -1,6 +1,8 @@
 syntax = "proto3";
 package tistreampb;
 
+import "schemapb.proto";
+
 option go_package = "./";
 
 enum OpType {
@@ -32,4 +34,5 @@ message EventWatermark {
 message EventBatch {
     repeated EventRow rows = 1;
     repeated EventWatermark watermarks = 2;
+    repeated DDLChange ddl_changes = 3;
 }

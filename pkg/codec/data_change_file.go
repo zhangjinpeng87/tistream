@@ -19,18 +19,25 @@ const (
 // The file payload is as follows:
 // Header (24 bytes) | File version (4 bytes) | Event size (4 bytes) | Event batch (event size bytes) | ... | Checksum (4 bytes)
 type DataChangesFileDecoder struct {
+	TenantID uint64
+
 	// All the event rows in the file.
-	eventRows []*pb.EventRow
+	EventRows []*pb.EventRow
 
 	// The event watermark in the file.
-	eventWatermarks []*pb.EventWatermark
+	EventWatermarks []*pb.EventWatermark
+
+	// DDL changes
+	DdlChanges []*pb.DDLChange
 }
 
 // NewDataChangesFileDecoder creates a new DataChanges.
-func NewDataChangesFileDecoder() *DataChangesFileDecoder {
+func NewDataChangesFileDecoder(tenantId uint64) *DataChangesFileDecoder {
 	return &DataChangesFileDecoder{
-		eventRows:       make([]*pb.EventRow, 0),
-		eventWatermarks: make([]*pb.EventWatermark, 0),
+		TenantID:        tenantId,
+		EventRows:       make([]*pb.EventRow, 0),
+		EventWatermarks: make([]*pb.EventWatermark, 0),
+		DdlChanges:      make([]*pb.DDLChange, 0),
 	}
 }
 
@@ -78,12 +85,15 @@ func (f *DataChangesFileDecoder) DecodeFrom(reader io.Reader) error {
 			return err
 		}
 
-		// Append the rows and watermarks.
+		// Append the rows, watermarks and schema changes.
 		if eventBatch.Rows != nil {
-			f.eventRows = append(f.eventRows, eventBatch.Rows...)
+			f.EventRows = append(f.EventRows, eventBatch.Rows...)
 		}
 		if eventBatch.Watermarks != nil {
-			f.eventWatermarks = append(f.eventWatermarks, eventBatch.Watermarks...)
+			f.EventWatermarks = append(f.EventWatermarks, eventBatch.Watermarks...)
+		}
+		if eventBatch.DdlChanges != nil {
+			f.DdlChanges = append(f.DdlChanges, eventBatch.DdlChanges...)
 		}
 	}
 

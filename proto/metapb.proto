@@ -46,12 +46,14 @@ message Task {
 }
 
 message RangeChangesReq {
-    Task.Range range = 1;
-    repeated EventRow rows = 2;
-    repeated EventWatermark watermarks = 3;
+    uint64 tenant_id = 1;
+    Task.Range range = 2;
+    repeated EventRow rows = 3;
+    repeated EventWatermark watermarks = 4;
 }
 
 message RangeChangesResp {
+    string err_msg = 1;
 }
 
 message TenantSubStats {
@@ -115,4 +117,21 @@ message RegisterSchemaSnapReq {
 message RegisterSchemaSnapResp {
     uint64 tenant_id = 1;
     string err_msg = 2;
+}
+
+message FetchSchemaRegistryAddrReq {
+    uint64 tenant_id = 1;
+}
+
+message FetchSchemaRegistryAddrResp {
+    string addr = 1;
+}
+
+message FetchRangeSorterAddrReq {
+    uint64 tenant_id = 1;
+    Task.Range range = 2;
+}
+
+message FetchRangeSorterAddrResp {
+    string addr = 1;
 }

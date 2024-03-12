@@ -25,6 +25,8 @@ type MetaServiceClient interface {
 	TenantHasNewChange(ctx context.Context, in *HasNewChangeReq, opts ...grpc.CallOption) (*HasNewChangeResp, error)
 	DispatcherHeartbeat(ctx context.Context, in *DispatcherHeartbeatReq, opts ...grpc.CallOption) (*DispatcherHeartbeatResp, error)
 	SorterHeartbeat(ctx context.Context, in *SorterHeartbeatReq, opts ...grpc.CallOption) (*SorterHeartbeatResp, error)
+	FetchSchemaRegistryAddr(ctx context.Context, in *FetchSchemaRegistryAddrReq, opts ...grpc.CallOption) (*FetchSchemaRegistryAddrResp, error)
+	FetchRangeSorterAddr(ctx context.Context, in *FetchRangeSorterAddrReq, opts ...grpc.CallOption) (*FetchRangeSorterAddrResp, error)
 }
 
 type metaServiceClient struct {
@@ -62,6 +64,24 @@ func (c *metaServiceClient) SorterHeartbeat(ctx context.Context, in *SorterHeart
 	return out, nil
 }
 
+func (c *metaServiceClient) FetchSchemaRegistryAddr(ctx context.Context, in *FetchSchemaRegistryAddrReq, opts ...grpc.CallOption) (*FetchSchemaRegistryAddrResp, error) {
+	out := new(FetchSchemaRegistryAddrResp)
+	err := c.cc.Invoke(ctx, "/tistreampb.MetaService/FetchSchemaRegistryAddr", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *metaServiceClient) FetchRangeSorterAddr(ctx context.Context, in *FetchRangeSorterAddrReq, opts ...grpc.CallOption) (*FetchRangeSorterAddrResp, error) {
+	out := new(FetchRangeSorterAddrResp)
+	err := c.cc.Invoke(ctx, "/tistreampb.MetaService/FetchRangeSorterAddr", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // MetaServiceServer is the server API for MetaService service.
 // All implementations must embed UnimplementedMetaServiceServer
 // for forward compatibility
@@ -69,6 +89,8 @@ type MetaServiceServer interface {
 	TenantHasNewChange(context.Context, *HasNewChangeReq) (*HasNewChangeResp, error)
 	DispatcherHeartbeat(context.Context, *DispatcherHeartbeatReq) (*DispatcherHeartbeatResp, error)
 	SorterHeartbeat(context.Context, *SorterHeartbeatReq) (*SorterHeartbeatResp, error)
+	FetchSchemaRegistryAddr(context.Context, *FetchSchemaRegistryAddrReq) (*FetchSchemaRegistryAddrResp, error)
+	FetchRangeSorterAddr(context.Context, *FetchRangeSorterAddrReq) (*FetchRangeSorterAddrResp, error)
 	mustEmbedUnimplementedMetaServiceServer()
 }
 
@@ -84,6 +106,12 @@ func (UnimplementedMetaServiceServer) DispatcherHeartbeat(context.Context, *Disp
 }
 func (UnimplementedMetaServiceServer) SorterHeartbeat(context.Context, *SorterHeartbeatReq) (*SorterHeartbeatResp, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method SorterHeartbeat not implemented")
+}
+func (UnimplementedMetaServiceServer) FetchSchemaRegistryAddr(context.Context, *FetchSchemaRegistryAddrReq) (*FetchSchemaRegistryAddrResp, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method FetchSchemaRegistryAddr not implemented")
+}
+func (UnimplementedMetaServiceServer) FetchRangeSorterAddr(context.Context, *FetchRangeSorterAddrReq) (*FetchRangeSorterAddrResp, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method FetchRangeSorterAddr not implemented")
 }
 func (UnimplementedMetaServiceServer) mustEmbedUnimplementedMetaServiceServer() {}
 
@@ -152,6 +180,42 @@ func _MetaService_SorterHeartbeat_Handler(srv interface{}, ctx context.Context, 
 	return interceptor(ctx, in, info, handler)
 }
 
+func _MetaService_FetchSchemaRegistryAddr_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(FetchSchemaRegistryAddrReq)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MetaServiceServer).FetchSchemaRegistryAddr(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/tistreampb.MetaService/FetchSchemaRegistryAddr",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MetaServiceServer).FetchSchemaRegistryAddr(ctx, req.(*FetchSchemaRegistryAddrReq))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _MetaService_FetchRangeSorterAddr_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(FetchRangeSorterAddrReq)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MetaServiceServer).FetchRangeSorterAddr(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/tistreampb.MetaService/FetchRangeSorterAddr",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MetaServiceServer).FetchRangeSorterAddr(ctx, req.(*FetchRangeSorterAddrReq))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // MetaService_ServiceDesc is the grpc.ServiceDesc for MetaService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -170,6 +234,14 @@ var MetaService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "SorterHeartbeat",
 			Handler:    _MetaService_SorterHeartbeat_Handler,
+		},
+		{
+			MethodName: "FetchSchemaRegistryAddr",
+			Handler:    _MetaService_FetchSchemaRegistryAddr_Handler,
+		},
+		{
+			MethodName: "FetchRangeSorterAddr",
+			Handler:    _MetaService_FetchRangeSorterAddr_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

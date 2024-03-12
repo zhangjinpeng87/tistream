@@ -7,6 +7,7 @@ import (
 
 	"golang.org/x/sync/errgroup"
 
+	"github.com/zhangjinpeng87/tistream/pkg/codec"
 	"github.com/zhangjinpeng87/tistream/pkg/storage"
 	"github.com/zhangjinpeng87/tistream/pkg/utils"
 	pb "github.com/zhangjinpeng87/tistream/proto/go/tistreampb"
@@ -68,7 +69,7 @@ func NewDataChangeBufferManager(ctx context.Context, eg *errgroup.Group, cfg *ut
 	}
 }
 
-func (m *DataChangeBufferManager) AttachTenant(tenantID uint64) error {
+func (m *DataChangeBufferManager) AttachTenant(tenantID uint64, fileSender chan<- *codec.DataChangesFileDecoder) error {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
@@ -78,7 +79,7 @@ func (m *DataChangeBufferManager) AttachTenant(tenantID uint64) error {
 
 	tenantRootDir := fmt.Sprintf("%s/Tenant-%d", m.cfg.Storage.Prefix, tenantID)
 
-	tenantChanges := NewTenantDataChanges(tenantID, tenantRootDir, m.backendStorage)
+	tenantChanges := NewTenantDataChanges(tenantID, tenantRootDir, fileSender, m.backendStorage)
 	m.tenantChanges[tenantID] = tenantChanges
 
 	// Create channel to notify the tenant has new data change files.
