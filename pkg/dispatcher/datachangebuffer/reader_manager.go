@@ -29,19 +29,19 @@ import (
 // |  |____store-{id2}
 // |  |____store-{id3}
 
-// DataChangeBufferManager is the manager of the data change buffer.
-type DataChangeBufferManager struct {
+// ReaderManager is the manager of the data change buffer.
+type ReaderManager struct {
 	// Dispatcher Config
 	cfg *utils.DispatcherConfig
 
 	// The backendStorage to store the data change files.
 	backendStorage storage.ExternalStorage
 
-	// RWMutex to protect the tenantChanges.
+	// RWMutex to protect the tenantReaders.
 	mu sync.RWMutex
 
-	// TenantID -> TenantDataChanges
-	tenantChanges map[uint64]*TenantDataChanges
+	// TenantID -> TenantReader
+	tenantReaders map[uint64]*TenantReader
 	// TenantID -> channel to notify the tenant has new data change files.
 	tenantChannels map[uint64]chan struct{}
 
@@ -58,29 +58,29 @@ type DataChangeBufferManager struct {
 	eg  *errgroup.Group
 }
 
-func NewDataChangeBufferManager(ctx context.Context, eg *errgroup.Group, cfg *utils.DispatcherConfig, backendStorage storage.ExternalStorage) *DataChangeBufferManager {
-	return &DataChangeBufferManager{
+func NewReaderManager(ctx context.Context, eg *errgroup.Group, cfg *utils.DispatcherConfig, backendStorage storage.ExternalStorage) *ReaderManager {
+	return &ReaderManager{
 		backendStorage: backendStorage,
 		cfg:            cfg,
-		tenantChanges:  make(map[uint64]*TenantDataChanges),
+		tenantReaders:  make(map[uint64]*TenantReader),
 		statusCh:       make(chan *pb.TenantSubStats, 128),
 		eg:             eg,
 		ctx:            ctx,
 	}
 }
 
-func (m *DataChangeBufferManager) AttachTenant(tenantID uint64, fileSender chan<- *codec.DataChangesFileDecoder) error {
+func (m *ReaderManager) AttachTenant(tenantID uint64, fileSender chan<- *codec.FileEvent) error {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
-	if _, ok := m.tenantChanges[tenantID]; ok {
+	if _, ok := m.tenantReaders[tenantID]; ok {
 		return fmt.Errorf("tenant %d already attached", tenantID)
 	}
 
 	tenantRootDir := fmt.Sprintf("%s/Tenant-%d", m.cfg.Storage.Prefix, tenantID)
 
-	tenantChanges := NewTenantDataChanges(tenantID, tenantRootDir, fileSender, m.backendStorage)
-	m.tenantChanges[tenantID] = tenantChanges
+	tenantReader := NewTenantReader(tenantID, tenantRootDir, fileSender, m.backendStorage)
+	m.tenantReaders[tenantID] = tenantReader
 
 	// Create channel to notify the tenant has new data change files.
 	c := make(chan struct{}, 8)
@@ -89,31 +89,31 @@ func (m *DataChangeBufferManager) AttachTenant(tenantID uint64, fileSender chan<
 	return nil
 }
 
-func (m *DataChangeBufferManager) DetachTenant(tenantID uint64) error {
+func (m *ReaderManager) DetachTenant(tenantID uint64) error {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
-	if _, ok := m.tenantChanges[tenantID]; !ok {
+	if _, ok := m.tenantReaders[tenantID]; !ok {
 		return fmt.Errorf("tenant %d not attached", tenantID)
 	}
 
-	delete(m.tenantChanges, tenantID)
+	delete(m.tenantReaders, tenantID)
 	close(m.tenantChannels[tenantID])
 	delete(m.tenantChannels, tenantID)
 
 	return nil
 }
 
-func (m *DataChangeBufferManager) Run(ctx context.Context) {
+func (m *ReaderManager) Run(ctx context.Context) {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
 
 	// Start the tenant data changes.
-	for _, tenantChanges := range m.tenantChanges {
-		tc := tenantChanges
-		recv, ok := m.tenantChannels[tenantChanges.tenantID]
+	for _, tenantReader := range m.tenantReaders {
+		tc := tenantReader
+		recv, ok := m.tenantChannels[tenantReader.tenantID]
 		if !ok {
-			errMsg := fmt.Sprintf("tenant %d no notification channel", tenantChanges.tenantID)
+			errMsg := fmt.Sprintf("tenant %d no notification channel", tenantReader.tenantID)
 			panic(errMsg)
 		}
 		m.eg.Go(func() error {
@@ -127,7 +127,7 @@ func (m *DataChangeBufferManager) Run(ctx context.Context) {
 	})
 }
 
-func (m *DataChangeBufferManager) TenantHasNewChanges(tenantID uint64) {
+func (m *ReaderManager) TenantHasNewChanges(tenantID uint64) {
 	// Find the notify channel according to the tenantID.
 	c, ok := m.tenantChannels[tenantID]
 	if !ok {
@@ -141,27 +141,7 @@ func (m *DataChangeBufferManager) TenantHasNewChanges(tenantID uint64) {
 	}
 }
 
-func (m *DataChangeBufferManager) HandleTenantTasks(req *pb.TenantTasksReq) error {
-	m.mu.RLock()
-	defer m.mu.RUnlock()
-
-	// Todo: handle the tenant's multiple tasks.
-
-	switch req.Op {
-	case pb.TaskOp_Attach:
-		if err := m.AttachTenant(req.TenantId); err != nil {
-			return err
-		}
-	case pb.TaskOp_Detach:
-		if err := m.DetachTenant(req.TenantId); err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-func (m *DataChangeBufferManager) collectStats(ctx context.Context) error {
+func (m *ReaderManager) collectStats(ctx context.Context) error {
 	for {
 		select {
 		case <-ctx.Done():
@@ -186,7 +166,7 @@ func (m *DataChangeBufferManager) collectStats(ctx context.Context) error {
 	}
 }
 
-func (m *DataChangeBufferManager) FetchStatsAndReset() (uint64, []*pb.TenantSubStats) {
+func (m *ReaderManager) FetchStatsAndReset() (uint64, []*pb.TenantSubStats) {
 	m.statsMu.Lock()
 	defer m.statsMu.Unlock()
 

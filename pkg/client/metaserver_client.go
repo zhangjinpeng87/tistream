@@ -1,4 +1,4 @@
-package dispatcherworker
+package client
 
 import (
 	"context"
@@ -10,8 +10,8 @@ import (
 
 // Todo: handle meta-server scale-out and scale-in cases, dynamically add or remove meta-server addr.
 type MetaServerClient struct {
-	addrs []string
-	conns []*grpc.ClientConn
+	addrs                []string
+	conns                []*grpc.ClientConn
 	schemaServiceClients []pb.MetaServiceClient
 }
 

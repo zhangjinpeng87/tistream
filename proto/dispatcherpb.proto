@@ -6,6 +6,6 @@ import "metapb.proto";
 option go_package = "./";
 
 service DispatcherService {
-    rpc TenantHasNewChanges (tistreampb.HasNewChangeReq) returns (tistreampb.HasNewChangeResp);
-    rpc HandleTenantTask (tistreampb.TenantTasksReq) returns (tistreampb.TenantTasksResp);
+    rpc NotifiyTenantHasUpdate (tistreampb.HasNewChangeReq) returns (tistreampb.HasNewChangeResp);
+    rpc ScheduleNewTenant (tistreampb.TenantTasksReq) returns (tistreampb.TenantTasksResp);
 }

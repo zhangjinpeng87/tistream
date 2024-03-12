@@ -1,4 +1,4 @@
-package dispatcherworker
+package client
 
 import (
 	"context"

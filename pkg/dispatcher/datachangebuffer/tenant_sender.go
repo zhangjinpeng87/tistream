@@ -1,44 +1,46 @@
-package dispatcherworker
+package datachangebuffer
 
 import (
 	"context"
 	"fmt"
 
+	"github.com/zhangjinpeng87/tistream/pkg/client"
+	"github.com/zhangjinpeng87/tistream/pkg/codec"
 	pb "github.com/zhangjinpeng87/tistream/proto/go/tistreampb"
 	"golang.org/x/sync/errgroup"
 )
 
-type TenantSendingWorker struct {
+type TenantDataSender struct {
 	tenantId uint64
-	ch       <-chan *FileEvent
+	ch       <-chan *codec.FileEvent
 
 	// Meta server client. Used to get the sorter address and schema-registry address.
 	// And update the sorter address and schema-registry address when the tenant scheduled to another sorter or schema-registry.
-	metaSrvCli *MetaServerClient
+	metaSrvCli *client.MetaServerClient
 
 	// The remote sorter client.
-	sorterCli *SorterClient
+	sorterCli *client.SorterClient
 
 	// The schema registry client.
-	schemeCli *SchemaRegistryClient
+	schemeCli *client.SchemaRegistryClient
 }
 
-func NewTenantSendingWorker(tenantId uint64, ch <-chan *FileEvent, metaSrvCli *MetaServerClient) *TenantSendingWorker {
-	return &TenantSendingWorker{
+func NewTenantDataSender(tenantId uint64, ch <-chan *codec.FileEvent, metaSrvCli *client.MetaServerClient) *TenantDataSender {
+	return &TenantDataSender{
 		tenantId:   tenantId,
 		ch:         ch,
 		metaSrvCli: metaSrvCli,
 	}
 }
 
-func (tsw *TenantSendingWorker) Run(ctx context.Context, eg *errgroup.Group) {
+func (tsw *TenantDataSender) Run(ctx context.Context, eg *errgroup.Group) {
 
 	// Get the sorter address and schema-registry address.
 	sorterAddr, err := tsw.metaSrvCli.FetchSorterAddr(ctx, &pb.FetchRangeSorterAddrReq{TenantId: tsw.tenantId})
 	if err != nil {
 		panic(fmt.Sprintf("fetch sorter addr failed, tenantID: %d, err: %v", tsw.tenantId, err))
 	}
-	sorterCli, err := NewSorterClient(sorterAddr)
+	sorterCli, err := client.NewSorterClient(sorterAddr)
 	if err != nil {
 		panic(fmt.Sprintf("create sorter client failed, tenantID: %d, err: %v", tsw.tenantId, err))
 	}
@@ -47,7 +49,7 @@ func (tsw *TenantSendingWorker) Run(ctx context.Context, eg *errgroup.Group) {
 	if err != nil {
 		panic(fmt.Sprintf("fetch schema registry addr failed, tenantID: %d, err: %v", tsw.tenantId, err))
 	}
-	schemaCli, err := NewSchemaRegistryClient(schemaRegistryAddr)
+	schemaCli, err := client.NewSchemaRegistryClient(schemaRegistryAddr)
 	if err != nil {
 		panic(fmt.Sprintf("create schema registry client failed, tenantID: %d, err: %v", tsw.tenantId, err))
 	}
@@ -101,7 +103,7 @@ func (tsw *TenantSendingWorker) Run(ctx context.Context, eg *errgroup.Group) {
 	})
 }
 
-func (tsw *TenantSendingWorker) Close() {
+func (tsw *TenantDataSender) Close() {
 	tsw.sorterCli.Close()
 	tsw.schemeCli.Close()
 }

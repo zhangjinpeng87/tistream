@@ -1,0 +1,3 @@
+package codec
+
+type FileEvent=DataChangesFileDecoder

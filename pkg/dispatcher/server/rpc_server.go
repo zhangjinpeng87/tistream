@@ -10,28 +10,47 @@ import (
 type dispatcherRpcServer struct {
 	pb.UnimplementedDispatcherServiceServer
 
-	// The data change buffer.
-	dcbMgr *datachangebuffer.DataChangeBufferManager
+	// The reader and sender manager.
+	readerMgr *datachangebuffer.ReaderManager
+	senderMgr *datachangebuffer.SenderManager
 }
 
-func NewDispatcherRpcServer(dcbMgr *datachangebuffer.DataChangeBufferManager) *dispatcherRpcServer {
+func NewDispatcherRpcServer(readerMgr *datachangebuffer.ReaderManager, senderMgr *datachangebuffer.SenderManager) *dispatcherRpcServer {
 	return &dispatcherRpcServer{
-		dcbMgr: dcbMgr,
+		readerMgr: readerMgr,
+		senderMgr: senderMgr,
 	}
 }
 
-func (d *dispatcherRpcServer) TenantHasNewChanges(ctx context.Context, in *pb.HasNewChangeReq) (*pb.HasNewChangeResp, error) {
+func (d *dispatcherRpcServer) NotifiyTenantHasUpdate(ctx context.Context, in *pb.HasNewChangeReq) (*pb.HasNewChangeResp, error) {
 	// Tenant has new chagnes, the dispatcher should notify the worker to dispatch the data change files.
 	for _, tenantId := range in.TenantId {
-		d.dcbMgr.TenantHasNewChanges(tenantId)
+		d.readerMgr.TenantHasNewChanges(tenantId)
 	}
 
 	return &pb.HasNewChangeResp{}, nil
 }
 
-func (d *dispatcherRpcServer) HandleTenantTask(ctx context.Context, in *pb.TenantTasksReq) (*pb.TenantTasksResp, error) {
-	// Handle the tenant's tasks.
-	err := d.dcbMgr.HandleTenantTasks(in)
+func (d *dispatcherRpcServer) ScheduleNewTenant(ctx context.Context, in *pb.TenantTasksReq) (*pb.TenantTasksResp, error) {
+	switch in.Op {
+	case pb.TaskOp_Attach:
+		sender, err := d.senderMgr.AttachTenant(in.TenantId)
+		if err != nil {
+			return nil, err
+		}
 
-	return &pb.TenantTasksResp{}, err
+		err = d.readerMgr.AttachTenant(in.TenantId, sender)
+		if err != nil {
+			return nil, err
+		}
+	case pb.TaskOp_Detach:
+		err := d.readerMgr.DetachTenant(in.TenantId)
+		if err != nil {
+			return nil, err
+		}
+
+		d.senderMgr.DetachTenant(in.TenantId)
+	}
+
+	return &pb.TenantTasksResp{}, nil
 }

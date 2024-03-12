@@ -39,7 +39,7 @@ const (
 //     time range for a specified store.
 
 // Tenant is the data change buffer for a tenant.
-type TenantDataChanges struct {
+type TenantReader struct {
 	// The tenant id.
 	tenantID uint64
 
@@ -55,16 +55,16 @@ type TenantDataChanges struct {
 	// StoreID -> StoreProgress
 	storesProgress map[string]*StoreProgress
 
-	fileSender chan<- *codec.DataChangesFileDecoder
+	fileSender chan<- *codec.FileEvent
 
 	// Stats
 	// Throughput sinnce last report.
 	throughput atomic.Uint64
 }
 
-// NewTenantDataChanges creates a new TenantDataChanges.
-func NewTenantDataChanges(tenantID uint64, rootDir string, fileSender chan<- *codec.DataChangesFileDecoder, storage.ExternalStorage) *TenantDataChanges {
-	return &TenantDataChanges{
+// NewTenantReader creates a new TenantReader.
+func NewTenantReader(tenantID uint64, rootDir string, fileSender chan<- *codec.FileEvent, backendStorage storage.ExternalStorage) *TenantReader {
+	return &TenantReader{
 		tenantID:       tenantID,
 		rootDir:        rootDir,
 		fileSender:     fileSender,
@@ -73,7 +73,7 @@ func NewTenantDataChanges(tenantID uint64, rootDir string, fileSender chan<- *co
 }
 
 // initialize initializes the tenant data changes.
-func (t *TenantDataChanges) initialize() error {
+func (t *TenantReader) initialize() error {
 	// Lock the mutex.
 	t.mu.Lock()
 	defer t.mu.Unlock()
@@ -98,7 +98,7 @@ func (t *TenantDataChanges) initialize() error {
 	return nil
 }
 
-func (t *TenantDataChanges) updateStores() error {
+func (t *TenantReader) updateStores() error {
 	// Lock the mutex.
 	t.mu.Lock()
 	defer t.mu.Unlock()
@@ -140,7 +140,7 @@ func (t *TenantDataChanges) updateStores() error {
 }
 
 // GetSchemaSnap returns the schema snapshot of this tenant.
-func (t *TenantDataChanges) GetSchemaSnap() (*codec.SchemaSnapFile, error) {
+func (t *TenantReader) GetSchemaSnap() (*codec.SchemaSnapFile, error) {
 	filePath := t.rootDir + schemaSnap
 
 	content, err := t.backendStorage.GetFile(filePath)
@@ -159,7 +159,7 @@ func (t *TenantDataChanges) GetSchemaSnap() (*codec.SchemaSnapFile, error) {
 }
 
 // Run runs the tenant data changes.
-func (t *TenantDataChanges) Run(ctx context.Context, checkStoreInterval, checkFileInterval int,
+func (t *TenantReader) Run(ctx context.Context, checkStoreInterval, checkFileInterval int,
 	recv <-chan struct{}, statsSender chan<- *pb.TenantSubStats) error {
 	// Initialize the tenant data changes.
 	if err := t.initialize(); err != nil {
@@ -211,7 +211,7 @@ func (t *TenantDataChanges) Run(ctx context.Context, checkStoreInterval, checkFi
 
 // iterateNewFileChanges iterates the new file changes.
 // Todo: use dedicated workers to handle the file changes.
-func (t *TenantDataChanges) iterateNewFileChanges() error {
+func (t *TenantReader) iterateNewFileChanges() error {
 	// Lock the mutex.
 	t.mu.Lock()
 	defer t.mu.Unlock()
@@ -253,7 +253,7 @@ func (t *TenantDataChanges) iterateNewFileChanges() error {
 }
 
 // handleFile handles the file.
-func (t *TenantDataChanges) handleFile(storeProgress *StoreProgress, ts uint64) (uint64, error) {
+func (t *TenantReader) handleFile(storeProgress *StoreProgress, ts uint64) (uint64, error) {
 	// Read the file.
 	filePath := t.rootDir + storeProgress.storeDir + "/" + strconv.FormatUint(ts, 10)
 	content, err := t.backendStorage.GetFile(filePath)
@@ -292,7 +292,7 @@ func (t *TenantDataChanges) handleFile(storeProgress *StoreProgress, ts uint64) 
 }
 
 // listStoreDirs returns the list of store directories.
-func (t *TenantDataChanges) listStoreDir() (map[string]struct{}, error) {
+func (t *TenantReader) listStoreDir() (map[string]struct{}, error) {
 	list, err := t.backendStorage.ListSubDir(t.rootDir)
 	if err != nil {
 		return nil, err

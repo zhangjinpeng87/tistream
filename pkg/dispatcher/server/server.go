@@ -25,8 +25,9 @@ type DispatchServer struct {
 
 	cfg *utils.DispatcherConfig
 
-	// The data change buffer.
-	dcbMgr *datachangebuffer.DataChangeBufferManager
+	// reader
+	readerMgr *datachangebuffer.ReaderManager
+	senderMgr *datachangebuffer.SenderManager
 
 	// The context to cancel the running goroutines.
 	ctx    context.Context
@@ -54,7 +55,8 @@ func NewDispatchServer(cfg *utils.DispatcherConfig) (*DispatchServer, error) {
 
 	return &DispatchServer{
 		grpcServer: grpcServer,
-		dcbMgr:     datachangebuffer.NewDataChangeBufferManager(ctx, eg, cfg, backend),
+		readerMgr:  datachangebuffer.NewReaderManager(ctx, eg, cfg, backend),
+		senderMgr:  datachangebuffer.NewSenderManager(ctx, eg),
 		cfg:        cfg,
 		ctx:        ctx,
 		eg:         eg,
@@ -66,7 +68,7 @@ func NewDispatchServer(cfg *utils.DispatcherConfig) (*DispatchServer, error) {
 func (s *DispatchServer) Prepare() error {
 	s.grpcServer = utils.NewGrpcServer(s.cfg.Addr, s.cfg.Port)
 
-	pb.RegisterDispatcherServiceServer(s.grpcServer.InternalServer, NewDispatcherRpcServer(s.dcbMgr))
+	pb.RegisterDispatcherServiceServer(s.grpcServer.InternalServer, NewDispatcherRpcServer(s.readerMgr, s.senderMgr))
 
 	return nil
 }
@@ -74,7 +76,7 @@ func (s *DispatchServer) Prepare() error {
 // Start starts the server.
 func (s *DispatchServer) Start() error {
 	// Start the data change buffer manager.
-	s.dcbMgr.Run(s.ctx)
+	s.readerMgr.Run(s.ctx)
 
 	// Start the gRPC server.
 	err := s.grpcServer.Start(s.eg, s.ctx)
@@ -102,7 +104,7 @@ func (s *DispatchServer) Heartbeat() {
 				return nil
 			case <-timer.C:
 				// Report the tenant stats.
-				throughput, stats := s.dcbMgr.FetchStatsAndReset()
+				throughput, stats := s.readerMgr.FetchStatsAndReset()
 				heartbeat := &pb.DispatcherHeartbeatReq{
 					Addr:        fmt.Sprintf("%s:%d", s.cfg.Addr, s.cfg.Port),
 					Throughput:  throughput,
